@@ -1,0 +1,14 @@
+PS C:\Users\vmfhd\Desktop\raid-hub\raid_hub_frontend> flutter run
+Connected devices:
+Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.26200.7623]
+Chrome (web)      • chrome  • web-javascript • Google Chrome 144.0.7559.59
+Edge (web)        • edge    • web-javascript • Microsoft Edge 144.0.3719.82
+[1]: Windows (windows)
+[2]: Chrome (chrome)
+[3]: Edge (edge)
+Please choose one (or "q" to quit): 1
+Launching lib\main.dart on Windows in debug mode...
+CMake Error: The current CMakeCache.txt directory C:/Users/vmfhd/Desktop/raid-hub/raid_hub_frontend/build/windows/x64/CMakeCache.txt is different than the directory c:/Users/vmfhd/OneDrive/바탕 화면/raid-hub/raid_hub_frontend/build/windows/x64 where CMakeCache.txt was created. This may result in binaries being created in the wrong place. If you are not sure, reedit the CMakeCache.txt
+CMake Error: The source "C:/Users/vmfhd/Desktop/raid-hub/raid_hub_frontend/windows/CMakeLists.txt" does not match the source "C:/Users/vmfhd/OneDrive/바탕 화면/raid-hub/raid_hub_frontend/windows/CMakeLists.txt" used to generate cache.  Re-run cmake with a different source directory.
+Building Windows application...                                     59ms
+Error: Unable to generate build files
