@@ -38,11 +38,17 @@ class _HomePageState extends State<HomePage> {
   final ApiService _apiService = ApiService();
   late Future<List<RaidVideo>> _videosFuture;
 
+  // 필터용 상태 변수들
+  String _selectedLegionRaid = '전체';
+  String _selectedDifficultyFilter = '전체';
+
+  final List<String> _legionRaids = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘'];
+
   // 카테고리 정의
   final List<String> _categories = [
     '전체',
     '군단장 레이드',
-    '에픽 레이드',
+    '에픽 레이드', // 에픽 레이드 다시 추가
     '카제로스 레이드',
     '그림자 레이드',
   ];
@@ -50,9 +56,9 @@ class _HomePageState extends State<HomePage> {
   // 레이드 이름 -> 카테고리 매핑 (단순 필터링용 데이터)
   final Map<String, List<String>> _raidByCategory = {
     '군단장 레이드': ['발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘'],
-    '에픽 레이드': ['베히모스'],
-    '카제로스 레이드': ['에키드나', '카제로스 1막', '카제로스 2막'],
-    '그림자 레이드': ['미정'], // 필요 시 추가
+    '에픽 레이드': ['베히모스'], // 베히모스를 에픽 레이드에 추가
+    '카제로스 레이드': ['(서막)에키드나', '(1막)에기르', '(2막)아브렐슈드', '(3막)모르둠', '(4막)아르모체', '(종막)카제로스'],
+    '그림자 레이드': ['세르카'],
   };
 
   @override
@@ -67,6 +73,15 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _onCategorySelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+      // 다른 카테고리를 선택하면 하위 필터들을 '전체'로 리셋
+      _selectedLegionRaid = '전체';
+      _selectedDifficultyFilter = '전체';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,11 +90,7 @@ class _HomePageState extends State<HomePage> {
           // 왼쪽 사이드바 (NavigationRail)
           NavigationRail(
             selectedIndex: _selectedIndex,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
+            onDestinationSelected: _onCategorySelected, // 변경된 콜백 사용
             labelType: NavigationRailLabelType.all,
             destinations: _categories.map((category) {
               IconData icon;
@@ -111,58 +122,163 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 영상 리스트 빌드
-  Widget _buildVideoContent() {
-    return FutureBuilder<List<RaidVideo>>(
-      future: _videosFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text("에러 발생: ${snapshot.error}"));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("등록된 영상이 없습니다."));
-        }
+  // 하위 카테고리 필터 위젯 (군단장 레이드용)
+  Widget _buildSubCategoryFilters() {
+    // '군단장 레이드' 카테고리가 아니면 아무것도 보여주지 않음
+    if (_categories[_selectedIndex] != '군단장 레이드') {
+      return const SizedBox.shrink(); // 빈 공간
+    }
 
-        final videos = snapshot.data!;
-        final filteredVideos = _filterVideos(videos);
-
-        if (filteredVideos.isEmpty) {
-          return const Center(child: Text("이 카테고리에 해당하는 영상이 없습니다."));
-        }
-
-        return GridView.builder(
-          padding: const EdgeInsets.all(20),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 300,
-            childAspectRatio: 0.8, // 카드 비율
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
-          ),
-          itemCount: filteredVideos.length,
-          itemBuilder: (context, index) {
-            final video = filteredVideos[index];
-            return _buildVideoCard(video);
-          },
-        );
-      },
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Wrap(
+        spacing: 8.0,
+        runSpacing: 4.0,
+        children: _legionRaids.map((raidName) {
+          return ChoiceChip(
+            label: Text(raidName),
+            selected: _selectedLegionRaid == raidName,
+            onSelected: (selected) {
+              setState(() {
+                if (selected) {
+                  _selectedLegionRaid = raidName;
+                  // 군단장 필터 변경 시 난이도 필터도 리셋
+                  _selectedDifficultyFilter = '전체';
+                }
+              });
+            },
+          );
+        }).toList(),
+      ),
     );
   }
 
-  // 카테고리에 따른 필터링 로직
-  List<RaidVideo> _filterVideos(List<RaidVideo> videos) {
-    if (_selectedIndex == 0) return videos; // 전체보기
+  // 영상 컨텐츠 영역 빌드 (필터링 로직 포함)
+  Widget _buildVideoContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 하위 카테고리 필터
+        _buildSubCategoryFilters(),
 
-    String selectedCategory = _categories[_selectedIndex];
-    List<String>? targetRaids = _raidByCategory[selectedCategory];
+        // 영상 리스트
+        Expanded(
+          child: FutureBuilder<List<RaidVideo>>(
+            future: _videosFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text("에러 발생: ${snapshot.error}"));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text("등록된 영상이 없습니다."));
+              }
 
-    if (targetRaids == null) return [];
+              // --- 필터링 로직 시작 ---
+              final allVideos = snapshot.data!;
+              
+              // 1단계: 메인 카테고리 필터링
+              List<RaidVideo> categoryFilteredVideos;
+              String selectedCategory = _categories[_selectedIndex];
+              if (_selectedIndex == 0) {
+                categoryFilteredVideos = allVideos; // 전체보기
+              } else {
+                List<String>? targetRaids = _raidByCategory[selectedCategory];
+                if (targetRaids == null) {
+                  categoryFilteredVideos = [];
+                } else {
+                  categoryFilteredVideos = allVideos.where((video) => targetRaids.contains(video.raidName)).toList();
+                }
+              }
 
-    return videos.where((video) {
-      // 레이드 이름이 해당 카테고리 리스트에 포함되는지 확인
-      return targetRaids.contains(video.raidName);
-    }).toList();
+              // 2단계: 군단장 레이드 하위 카테고리 필터링
+              List<RaidVideo> legionRaidFilteredVideos;
+              if (selectedCategory == '군단장 레이드' && _selectedLegionRaid != '전체') {
+                legionRaidFilteredVideos = categoryFilteredVideos.where((video) => video.raidName == _selectedLegionRaid).toList();
+              } else {
+                legionRaidFilteredVideos = categoryFilteredVideos;
+              }
+
+              // 3단계: 현재 필터링된 영상들에서 동적으로 난이도 목록 추출
+              final availableDifficulties = ['전체', ...legionRaidFilteredVideos.map((v) => v.difficulty).toSet().toList()];
+
+              // 4단계: 최종 난이도 필터링
+              List<RaidVideo> finalFilteredVideos;
+              if (_selectedDifficultyFilter != '전체') {
+                finalFilteredVideos = legionRaidFilteredVideos.where((video) => video.difficulty == _selectedDifficultyFilter).toList();
+              } else {
+                finalFilteredVideos = legionRaidFilteredVideos;
+              }
+              // --- 필터링 로직 끝 ---
+
+              if (finalFilteredVideos.isEmpty) {
+                return Column(
+                  children: [
+                    _buildDifficultyFilters(availableDifficulties), // 필터는 계속 보여줌
+                    const Expanded(
+                      child: Center(child: Text("이 카테고리에 해당하는 영상이 없습니다."))
+                    ),
+                  ],
+                );
+              }
+
+              return Column(
+                children: [
+                  _buildDifficultyFilters(availableDifficulties),
+                  Expanded(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 300,
+                        childAspectRatio: 0.8,
+                        crossAxisSpacing: 20,
+                        mainAxisSpacing: 20,
+                      ),
+                      itemCount: finalFilteredVideos.length,
+                      itemBuilder: (context, index) {
+                        final video = finalFilteredVideos[index];
+                        return _buildVideoCard(video);
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
+
+  // 난이도 필터 위젯
+  Widget _buildDifficultyFilters(List<String> difficulties) {
+    // '전체' 와 유니크한 난이도 1개만 있으면 굳이 필터 안보여줌
+    if (difficulties.length <= 2) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Wrap(
+        spacing: 8.0,
+        runSpacing: 4.0,
+        children: difficulties.map((difficulty) {
+          return ChoiceChip(
+            label: Text(difficulty),
+            selected: _selectedDifficultyFilter == difficulty,
+            onSelected: (selected) {
+              setState(() {
+                if (selected) {
+                  _selectedDifficultyFilter = difficulty;
+                }
+              });
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+
 
   // 영상 카드 위젯
   Widget _buildVideoCard(RaidVideo video) {
@@ -293,46 +409,74 @@ class VideoUploadDialog extends StatefulWidget {
 
 class _VideoUploadDialogState extends State<VideoUploadDialog> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // 입력 값 저장 변수
-  String _selectedCategory = '군단장 레이드';
+  String _selectedCategory = ''; // 초기값 설정
   String? _selectedRaidName;
-  String? _selectedDifficulty; // String? 으로 변경
+  String? _selectedDifficulty;
 
   final _titleController = TextEditingController();
   final _urlController = TextEditingController();
   final _uploaderController = TextEditingController();
   final _gateController = TextEditingController();
 
-  // 레이드별 난이도 정의
-  final Map<String, List<String>> _raidDifficulties = {
-    '쿠크세이튼': ['노말', '헬'],
-    '일리아칸': ['노말', '하드'],
+  // 모든 레이드에 대한 포괄적인 난이도 정의
+  static const Map<String, List<String>> _comprehensiveRaidDifficulties = {
+    // 군단장 레이드
+    '발탄': ['싱글', '노말', '하드'],
+    '비아키스': ['싱글', '노말', '하드'],
+    '아브렐슈드': ['싱글', '노말', '하드'],
+    '일리아칸': ['싱글', '노말', '하드'],
+    '카멘': ['싱글', '노말', '하드'],
+    '쿠크세이튼': ['싱글', '노말'],
+
+    // 에픽 레이드
     '베히모스': ['노말'],
-    // 그 외 레이드는 기본 난이도 (노말, 하드, 헬)
+    '(서막)에키드나': ['싱글', '노말', '하드'],
+    '(1막)에기르': ['싱글', '노말', '하드'],
+    '(2막)아브렐슈드': ['싱글', '노말', '하드'],
+    '(3막)모르둠': ['싱글', '노말', '하드'],
+    '(4막)아르모체': ['노말', '하드'],
+    '(종막)카제로스': ['노말', '하드'],
+
+    // 그림자 레이드
+    '세르카': ['노말', '하드', '나이트메어'],
   };
 
   @override
   void initState() {
     super.initState();
-    _selectedCategory = widget.categories.first; // 기본 카테고리 설정
-    _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first; // 기본 레이드 설정
+    _selectedCategory = widget.categories.first;
+    _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
     _updateAvailableDifficulties();
   }
 
   void _updateAvailableDifficulties() {
-    final availableDifficulties = _raidDifficulties[_selectedRaidName] ?? ['노말', '하드', '헬'];
-    if (_selectedDifficulty != null && !availableDifficulties.contains(_selectedDifficulty)) {
-      _selectedDifficulty = availableDifficulties.first; // 현재 선택된 난이도가 없거나 유효하지 않으면 첫 번째 난이도로 설정
-    } else if (_selectedDifficulty == null) {
-      _selectedDifficulty = availableDifficulties.first; // 초기 선택
+    // 현재 선택된 레이드 이름이 종합 맵에 있는지 확인하고 해당하는 난이도 목록을 가져옴
+    final availableDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? ['노말', '하드']; // 기본값 설정 (명확하게 알 수 없는 경우)
+    
+    // 현재 선택된 난이도가 유효한지 확인하고, 유효하지 않으면 첫 번째 난이도로 설정
+    if (_selectedDifficulty == null || !availableDifficulties.contains(_selectedDifficulty)) {
+      _selectedDifficulty = availableDifficulties.first;
     }
+  }
+
+  // 난이도 드롭다운의 유효성 검사기
+  String? _difficultyValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return '난이도를 선택하세요';
+    }
+    final allowedDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? [];
+    if (!allowedDifficulties.contains(value)) {
+      return '선택된 레이드에 유효하지 않은 난이도입니다.';
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     // 현재 선택된 레이드에 맞는 난이도 목록
-    final currentRaidDifficulties = _raidDifficulties[_selectedRaidName] ?? ['노말', '하드', '헬'];
+    final currentRaidDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? ['노말', '하드']; // 알 수 없는 레이드의 기본 난이도
 
     return AlertDialog(
       title: const Text('공략 영상 등록'),
@@ -350,8 +494,9 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                 onChanged: (val) {
                   setState(() {
                     _selectedCategory = val!;
+                    // 새 카테고리에 해당하는 첫 번째 레이드 이름으로 설정
                     _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
-                    _updateAvailableDifficulties(); // 레이드 이름 변경 시 난이도 목록 갱신
+                    _updateAvailableDifficulties(); // 난이도 목록 갱신
                   });
                 },
               ),
@@ -363,7 +508,7 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                 onChanged: (val) {
                   setState(() {
                     _selectedRaidName = val;
-                    _updateAvailableDifficulties(); // 레이드 이름 변경 시 난이도 목록 갱신
+                    _updateAvailableDifficulties(); // 난이도 목록 갱신
                   });
                 },
               ),
@@ -373,6 +518,7 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                 decoration: const InputDecoration(labelText: '난이도'),
                 items: currentRaidDifficulties.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
                 onChanged: (val) => setState(() => _selectedDifficulty = val!),
+                validator: _difficultyValidator, // 난이도 유효성 검사기 추가
               ),
               // 제목
               TextFormField(
