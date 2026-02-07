@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class RaidHubApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(RaidHubApplication.class, args);
-	}
-
+  public static void main(String[] args) {
+    SpringApplication.run(RaidHubApplication.class, args);
+  }
 }
