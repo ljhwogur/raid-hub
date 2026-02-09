@@ -1,14 +1,66 @@
-PS C:\Users\vmfhd\Desktop\raid-hub\raid_hub_frontend> flutter run
-Connected devices:
-Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.26200.7623]
-Chrome (web)      • chrome  • web-javascript • Google Chrome 144.0.7559.59
-Edge (web)        • edge    • web-javascript • Microsoft Edge 144.0.3719.82
-[1]: Windows (windows)
-[2]: Chrome (chrome)
-[3]: Edge (edge)
-Please choose one (or "q" to quit): 1
-Launching lib\main.dart on Windows in debug mode...
-CMake Error: The current CMakeCache.txt directory C:/Users/vmfhd/Desktop/raid-hub/raid_hub_frontend/build/windows/x64/CMakeCache.txt is different than the directory c:/Users/vmfhd/OneDrive/바탕 화면/raid-hub/raid_hub_frontend/build/windows/x64 where CMakeCache.txt was created. This may result in binaries being created in the wrong place. If you are not sure, reedit the CMakeCache.txt
-CMake Error: The source "C:/Users/vmfhd/Desktop/raid-hub/raid_hub_frontend/windows/CMakeLists.txt" does not match the source "C:/Users/vmfhd/OneDrive/바탕 화면/raid-hub/raid_hub_frontend/windows/CMakeLists.txt" used to generate cache.  Re-run cmake with a different source directory.
-Building Windows application...                                     59ms
-Error: Unable to generate build files
+Access to fetch at 'http://localhost:8080/login' from origin 'http://localhost:53551' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ This app is linked to the debug service: ws://127.0.0.1:55570/2oj_84PmDHE=/ws
+(index):1 Access to fetch at 'http://localhost:8080/login' from origin 'http://localhost:53551' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+browser_client.dart:83  POST http://localhost:8080/login net::ERR_FAILED 401 (Unauthorized)
+(anonymous) @ browser_client.dart:83
+(anonymous) @ async_patch.dart:622
+(anonymous) @ async_patch.dart:647
+(anonymous) @ async_patch.dart:593
+runUnary @ zone.dart:1849
+handleValue @ future_impl.dart:224
+handleValueCallback @ future_impl.dart:951
+_propagateToListeners @ future_impl.dart:980
+[_completeWithValue] @ future_impl.dart:723
+(anonymous) @ future_impl.dart:807
+_microtaskLoop @ schedule_microtask.dart:40
+_startMicrotaskLoop @ schedule_microtask.dart:49
+tear @ operations.dart:117
+(anonymous) @ async_patch.dart:186
+Promise.then
+_scheduleImmediateWithPromise @ profile.dart:117
+_scheduleImmediate @ async_patch.dart:160
+_scheduleAsyncCallback @ schedule_microtask.dart:69
+_rootScheduleMicrotask @ zone.dart:1623
+scheduleMicrotask @ zone.dart:1869
+[_asyncCompleteWithValue] @ future_impl.dart:806
+[_asyncComplete] @ future_impl.dart:766
+complete @ future_impl.dart:101
+[_complete] @ ticker.dart:432
+ticker.TickerFuture.complete @ ticker.dart:422
+[_animateToInternal] @ animation_controller.dart:684
+forward @ animation_controller.dart:484
+confirm @ ink_ripple.dart:206
+handleTap @ ink_well.dart:1196
+tear @ operations.dart:117
+invokeCallback @ recognizer.dart:345
+handleTapUp @ tap.dart:737
+[_checkUp] @ tap.dart:362
+handlePrimaryPointer @ tap.dart:293
+handleEvent @ recognizer.dart:706
+tear @ operations.dart:117
+[_dispatch] @ pointer_router.dart:97
+(anonymous) @ pointer_router.dart:143
+forEach @ linked_hash_map.dart:21
+[_dispatchEventToRoutes] @ pointer_router.dart:141
+route @ pointer_router.dart:131
+handleEvent @ binding.dart:530
+dispatchEvent @ binding.dart:499
+dispatchEvent @ binding.dart:473
+[_handlePointerEventImmediately] @ binding.dart:437
+handlePointerEvent @ binding.dart:394
+[_flushPointerEventQueue] @ binding.dart:341
+[_handlePointerDataPacket] @ binding.dart:308
+tear @ operations.dart:117
+invoke1 @ platform_dispatcher.dart:1327
+invokeOnPointerDataPacket @ platform_dispatcher.dart:281
+[_sendToFramework] @ pointer_binding.dart:411
+onPointerData @ pointer_binding.dart:231
+tear @ operations.dart:117
+(anonymous) @ pointer_binding.dart:1029
+(anonymous) @ pointer_binding.dart:912
+loggedHandler @ pointer_binding.dart:535
+runUnary @ zone.dart:1849
+(anonymous) @ zone.dart:1804
+_callDartFunctionFast1 @ js_allow_interop_patch.dart:224
+ret @ js_allow_interop_patch.dart:84
+js_primitives.dart:28 Error during login: ClientException: Failed to fetch, uri=http://localhost:8080/login

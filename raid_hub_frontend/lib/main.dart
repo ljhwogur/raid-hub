@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Import Provider
 import 'package:url_launcher/url_launcher.dart'; // 유튜브 링크 열기용 (추가 필요, 없으면 에러날 수 있으니 일단 로직만 구현하거나 패키지 추가)
 import 'models/raid_video.dart';
 import 'services/api_service.dart';
+import 'services/auth_service.dart'; // Import AuthService
+import 'screens/login_screen.dart'; // Import LoginScreen
 
 void main() {
-  runApp(const RaidHubApp());
+  runApp(
+    ChangeNotifierProvider( // Provide AuthService to the widget tree
+      create: (context) => AuthService(),
+      child: const RaidHubApp(),
+    ),
+  );
 }
 
 class RaidHubApp extends StatelessWidget {
@@ -21,7 +29,15 @@ class RaidHubApp extends StatelessWidget {
           brightness: Brightness.dark, // 다크 모드 느낌
         ),
       ),
-      home: const HomePage(),
+      home: Consumer<AuthService>( // Use Consumer to rebuild when AuthService changes
+        builder: (context, authService, child) {
+          if (authService.isAuthenticated) {
+            return const HomePage(); // Show HomePage if authenticated
+          } else {
+            return const LoginScreen(); // Show LoginScreen if not authenticated
+          }
+        },
+      ),
     );
   }
 }
@@ -84,7 +100,22 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context); // Access AuthService
+
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Lost Ark Raid Hub'),
+        actions: [
+          if (authService.isAuthenticated) // Show logout button if authenticated
+            TextButton.icon(
+              onPressed: () {
+                authService.logout();
+              },
+              icon: const Icon(Icons.logout),
+              label: const Text('Logout'),
+            ),
+        ],
+      ),
       body: Row(
         children: [
           // 왼쪽 사이드바 (NavigationRail)
@@ -115,10 +146,12 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddVideoDialog,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: authService.isAdmin // Show FAB only if admin
+          ? FloatingActionButton(
+              onPressed: _showAddVideoDialog,
+              child: const Icon(Icons.add),
+            )
+          : null, // Don't show FAB if not admin
     );
   }
 

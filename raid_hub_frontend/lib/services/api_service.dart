@@ -1,13 +1,18 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/raid_video.dart';
+import 'package:raid_hub_frontend/services/auth_service.dart'; // Import AuthService
 
 class ApiService {
   final String baseUrl = "http://localhost:8080/api/videos";
+  final AuthService _authService = AuthService(); // Get the AuthService instance
 
   Future<List<RaidVideo>> getVideos() async {
     try {
-      final response = await http.get(Uri.parse(baseUrl));
+      final response = await http.get(
+        Uri.parse(baseUrl),
+        headers: _authService.getAuthHeaders(), // Include auth headers
+      );
 
       if (response.statusCode == 200) {
         // UTF-8 디코딩 처리 (한글 깨짐 방지)
@@ -24,7 +29,7 @@ class ApiService {
   Future<RaidVideo> createVideo(RaidVideo video) async {
     final response = await http.post(
       Uri.parse(baseUrl),
-      headers: {"Content-Type": "application/json"},
+      headers: _authService.getAuthHeaders(), // Include auth headers
       body: jsonEncode(video.toJson()),
     );
 
@@ -32,7 +37,7 @@ class ApiService {
        // UTF-8 디코딩 처리
       return RaidVideo.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
     } else {
-      throw Exception('Failed to create video');
+      throw Exception('Failed to create video: ${response.statusCode}');
     }
   }
 }
