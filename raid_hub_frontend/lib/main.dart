@@ -29,15 +29,7 @@ class RaidHubApp extends StatelessWidget {
           brightness: Brightness.dark, // 다크 모드 느낌
         ),
       ),
-      home: Consumer<AuthService>( // Use Consumer to rebuild when AuthService changes
-        builder: (context, authService, child) {
-          if (authService.isAuthenticated) {
-            return const HomePage(); // Show HomePage if authenticated
-          } else {
-            return const LoginScreen(); // Show LoginScreen if not authenticated
-          }
-        },
-      ),
+      home: const HomePage(),
     );
   }
 }
@@ -67,6 +59,7 @@ class _HomePageState extends State<HomePage> {
     '에픽 레이드', // 에픽 레이드 다시 추가
     '카제로스 레이드',
     '그림자 레이드',
+    '관리자 로그인'
   ];
 
   // 레이드 이름 -> 카테고리 매핑 (단순 필터링용 데이터)
@@ -90,6 +83,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onCategorySelected(int index) {
+    // '관리자 로그인' 카테고리인 경우 LoginScreen으로 이동
+    if (_categories[index] == '관리자 로그인') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+      return;
+    }
+    
     setState(() {
       _selectedIndex = index;
       // 다른 카테고리를 선택하면 하위 필터들을 '전체'로 리셋

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:raid_hub_frontend/services/auth_service.dart'; // Import AuthService
 
 class LoginScreen extends StatefulWidget {
@@ -12,27 +13,29 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthService _authService = AuthService(); // Get the AuthService instance
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
+      final authService = Provider.of<AuthService>(context, listen: false);
       final String username = _usernameController.text;
       final String password = _passwordController.text;
 
-      final bool success = await _authService.login(username, password);
+      final bool success = await authService.login(username, password);
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful!')),
-        );
-        // TODO: Navigate to the main screen or admin dashboard based on authentication status
-        // For now, let's just print the status
-        print('Is Authenticated: ${_authService.isAuthenticated}');
-        print('Is Admin: ${_authService.isAdmin}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('로그인 성공!')),
+          );
+          // Navigate back to HomePage
+          Navigator.pop(context);
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login failed: Invalid credentials or server error')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('로그인 실패: 아이디 또는 비밀번호를 확인하세요')),
+          );
+        }
       }
     }
   }
@@ -41,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Login'),
+        title: const Text('관리자 로그인'),
       ),
       body: Center(
         child: Padding(
@@ -54,12 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _usernameController,
                   decoration: const InputDecoration(
-                    labelText: 'Username',
+                    labelText: '아이디',
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your username';
+                      return '아이디를 입력하세요';
                     }
                     return null;
                   },
@@ -68,13 +71,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   decoration: const InputDecoration(
-                    labelText: 'Password',
+                    labelText: '비밀번호',
                     border: OutlineInputBorder(),
                   ),
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
+                      return '비밀번호를 입력하세요';
                     }
                     return null;
                   },
@@ -82,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24.0),
                 ElevatedButton(
                   onPressed: _login,
-                  child: const Text('Login'),
+                  child: const Text('로그인'),
                 ),
               ],
             ),
