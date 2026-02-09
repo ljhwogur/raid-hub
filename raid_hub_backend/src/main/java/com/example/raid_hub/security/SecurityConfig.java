@@ -1,9 +1,11 @@
-package com.example.config;
+package com.example.raid_hub.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -36,9 +38,35 @@ public class SecurityConfig {
                     .anyRequest()
                     .authenticated() // All other requests require authentication
             )
-        .formLogin(
-            formLogin -> formLogin.permitAll() // Allow everyone to access the login page
-            )
+        .formLogin(formLogin ->
+                formLogin
+                    .permitAll() // Allow everyone to access the login page
+                    .successHandler(
+                        (request, response, authentication) -> {
+                          response.setStatus(HttpServletResponse.SC_OK);
+                          response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                          response.setCharacterEncoding("UTF-8");
+                          response
+                              .getWriter()
+                              .write(
+                                  "{\"success\":true,\"message\":\"성공적으로 로그인하였습니다.\",\"username\":\""
+                                      + authentication.getName()
+                                      + "\"}");
+                        })
+                    .failureHandler(
+                        (request, response, exception) -> {
+                          response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                          response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                          response.setCharacterEncoding("UTF-8");
+                          response
+                              .getWriter()
+                              .write(
+                                  "{"
+                                      + "\"success\":false,"
+                                      + "\"message\":\""
+                                      + exception.getMessage()
+                                      + "\"}");
+                        }))
         .csrf(csrf -> csrf.disable()); // Temporarily disable CSRF for easier testing
 
     return http.build();
@@ -46,14 +74,14 @@ public class SecurityConfig {
 
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(Arrays.asList("http://localhost:53551")); // 프론트엔드 주소
-    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(Arrays.asList("*"));
-    configuration.setAllowCredentials(true); // 자격 증명 허용
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOrigins(Arrays.asList("http://localhost:53551"));
+    config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(Arrays.asList("*"));
+    config.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration); // 모든 경로에 대해 CORS 설정 적용
+    source.registerCorsConfiguration("/**", config);
     return source;
   }
 
@@ -62,9 +90,10 @@ public class SecurityConfig {
     UserDetails admin =
         User.builder()
             .username("admin")
-            .password(passwordEncoder.encode("adminpass")) // Encode the password
+            .password(passwordEncoder.encode("admin"))
             .roles("ADMIN")
             .build();
+
     return new InMemoryUserDetailsManager(admin);
   }
 
