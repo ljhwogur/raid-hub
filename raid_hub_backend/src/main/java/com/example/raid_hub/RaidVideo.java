@@ -48,7 +48,7 @@ public class RaidVideo {
 
   @NotBlank(message = "난이도는 필수입니다")
   @Size(max = 5, message = "난이도는 5자 이하여야 합니다")
-  @Pattern(regexp = "^(노말|하드|헬)$", message = "난이도는 '노말', '하드', '헬' 중 하나여야 합니다")
+  @Pattern(regexp = "^(싱글|노말|하드|헬)$", message = "난이도는 '싱글', '노말', '하드', '헬' 중 하나여야 합니다")
   @Column(nullable = false, length = 5)
   private String difficulty; // 노말, 하드, 헬
 
