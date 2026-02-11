@@ -11,12 +11,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -35,10 +31,14 @@ public class SecurityConfig {
                 authorizeRequests
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll() // Allow all OPTIONS requests
+                    .requestMatchers(HttpMethod.POST, "/api/users/register")
+                    .permitAll() // Allow user registration without authentication
+                    .requestMatchers(HttpMethod.GET, "/api/users/check-username/**")
+                    .permitAll() // Allow username check without authentication
                     .requestMatchers(HttpMethod.POST, "/api/videos")
                     .hasRole("ADMIN") // Only ADMIN can POST to /api/videos
-                    .requestMatchers("/api/**")
-                    .permitAll() // Other /api requests are permitted
+                    .requestMatchers(HttpMethod.GET, "/api/**")
+                    .permitAll() // Allow GET /api requests
                     .anyRequest()
                     .authenticated() // All other requests require authentication
             )
@@ -83,18 +83,6 @@ public class SecurityConfig {
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
     return source;
-  }
-
-  @Bean
-  public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-    UserDetails admin =
-        User.builder()
-            .username("admin")
-            .password(passwordEncoder.encode("admin"))
-            .roles("ADMIN")
-            .build();
-
-    return new InMemoryUserDetailsManager(admin);
   }
 
   @Bean
