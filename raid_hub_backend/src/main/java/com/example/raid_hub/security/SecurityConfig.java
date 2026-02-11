@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -64,7 +65,13 @@ public class SecurityConfig {
                           response.setCharacterEncoding("UTF-8");
                           Map<String, Object> responseMap = new HashMap<>();
                           responseMap.put("success", false);
-                          responseMap.put("message", exception.getMessage());
+
+                          if (exception instanceof DisabledException) {
+                            responseMap.put("message", "아이디는 관리자 인증을 받은 후 사용하실 수 있습니다.");
+                          } else {
+                            responseMap.put("message", exception.getMessage());
+                          }
+
                           response.getWriter().write(objectMapper.writeValueAsString(responseMap));
                         }))
         .csrf(csrf -> csrf.disable()); // Temporarily disable CSRF for easier testing
