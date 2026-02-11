@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:raid_hub_frontend/services/auth_service.dart'; // Import AuthService
+import 'package:raid_hub_frontend/screens/signup_screen.dart'; // Import SignupScreen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -32,8 +33,10 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         if (mounted) {
+          final authService = Provider.of<AuthService>(context, listen: false);
+          final errorMessage = authService.loginErrorMessage ?? '아이디 또는 비밀번호를 확인하세요.';
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('로그인 실패: 아이디 또는 비밀번호를 확인하세요')),
+            SnackBar(content: Text(errorMessage)),
           );
         }
       }
@@ -83,9 +86,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 24.0),
-                ElevatedButton(
-                  onPressed: _login,
-                  child: const Text('로그인'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    ElevatedButton(
+                      onPressed: _login,
+                      child: const Text('로그인'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SignupScreen()),
+                        );
+                      },
+                      child: const Text('회원가입'),
+                    ),
+                  ],
                 ),
               ],
             ),
