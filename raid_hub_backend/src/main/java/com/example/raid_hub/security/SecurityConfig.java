@@ -1,7 +1,10 @@
 package com.example.raid_hub.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,7 +27,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper)
+      throws Exception {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 설정 적용
         .authorizeHttpRequests(
             authorizeRequests ->
@@ -38,7 +42,8 @@ public class SecurityConfig {
                     .anyRequest()
                     .authenticated() // All other requests require authentication
             )
-        .formLogin(formLogin ->
+        .formLogin(
+            formLogin ->
                 formLogin
                     .permitAll() // Allow everyone to access the login page
                     .successHandler(
@@ -46,26 +51,21 @@ public class SecurityConfig {
                           response.setStatus(HttpServletResponse.SC_OK);
                           response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                           response.setCharacterEncoding("UTF-8");
-                          response
-                              .getWriter()
-                              .write(
-                                  "{\"success\":true,\"message\":\"성공적으로 로그인하였습니다.\",\"username\":\""
-                                      + authentication.getName()
-                                      + "\"}");
+                          Map<String, Object> responseMap = new HashMap<>();
+                          responseMap.put("success", true);
+                          responseMap.put("message", "성공적으로 로그인하였습니다.");
+                          responseMap.put("username", authentication.getName());
+                          response.getWriter().write(objectMapper.writeValueAsString(responseMap));
                         })
                     .failureHandler(
                         (request, response, exception) -> {
                           response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                           response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                           response.setCharacterEncoding("UTF-8");
-                          response
-                              .getWriter()
-                              .write(
-                                  "{"
-                                      + "\"success\":false,"
-                                      + "\"message\":\""
-                                      + exception.getMessage()
-                                      + "\"}");
+                          Map<String, Object> responseMap = new HashMap<>();
+                          responseMap.put("success", false);
+                          responseMap.put("message", exception.getMessage());
+                          response.getWriter().write(objectMapper.writeValueAsString(responseMap));
                         }))
         .csrf(csrf -> csrf.disable()); // Temporarily disable CSRF for easier testing
 
