@@ -46,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   final ApiService _apiService = ApiService();
   late Future<List<RaidVideo>> _videosFuture;
+  late Future<List<PlaylistItem>> _playlistItemsFuture;
 
   // 필터용 상태 변수들
   String _selectedLegionRaid = '전체';
@@ -76,12 +77,18 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _refreshVideos();
+    _loadPlaylistItems();
   }
 
   void _refreshVideos() {
     setState(() {
       _videosFuture = _apiService.getVideos();
     });
+  }
+
+  void _loadPlaylistItems() {
+    const String playlistId = 'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa';
+    _playlistItemsFuture = _apiService.getPlaylistItems(playlistId);
   }
 
   void _onCategorySelected(int index) {
@@ -162,14 +169,12 @@ class _HomePageState extends State<HomePage> {
 
   // 플레이리스트 컨텐츠 빌드 (공략 카테고리용)
   Widget _buildPlaylistContent() {
-    const String playlistId = 'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa';
-    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: FutureBuilder<List<PlaylistItem>>(
-            future: _apiService.getPlaylistItems(playlistId),
+            future: _playlistItemsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
