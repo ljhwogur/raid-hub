@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/raid_video.dart';
+import '../models/playlist_item.dart';
 import 'package:raid_hub_frontend/services/auth_service.dart'; // Import AuthService
 
 class ApiService {
@@ -38,6 +39,25 @@ class ApiService {
       return RaidVideo.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
     } else {
       throw Exception('Failed to create video: ${response.statusCode}');
+    }
+  }
+
+  Future<List<PlaylistItem>> getPlaylistItems(String playlistId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8080/api/youtube/playlist-items?playlistId=$playlistId&fetchAll=true'),
+      );
+
+      if (response.statusCode == 200) {
+        // UTF-8 디코딩 처리 (한글 깨짐 방지)
+        final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        final List<dynamic> items = jsonData['items'] ?? [];
+        return items.map((dynamic item) => PlaylistItem.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load playlist items');
+      }
+    } catch (e) {
+      throw Exception('Error fetching playlist items: $e');
     }
   }
 }
