@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Import Provider
 import 'package:url_launcher/url_launcher.dart'; // 유튜브 링크 열기용 (추가 필요, 없으면 에러날 수 있으니 일단 로직만 구현하거나 패키지 추가)
 import 'models/raid_video.dart';
+import 'models/playlist_item.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart'; // Import AuthService
 import 'screens/login_screen.dart'; // Import LoginScreen
@@ -59,6 +60,7 @@ class _HomePageState extends State<HomePage> {
     '에픽 레이드', // 에픽 레이드 다시 추가
     '카제로스 레이드',
     '그림자 레이드',
+    '공략',
     '관리자 로그인'
   ];
 
@@ -133,6 +135,7 @@ class _HomePageState extends State<HomePage> {
                 case '에픽 레이드': icon = Icons.star; break;
                 case '카제로스 레이드': icon = Icons.whatshot; break;
                 case '그림자 레이드': icon = Icons.visibility_off; break;
+                case '공략': icon = Icons.school; break;
                 default: icon = Icons.category;
               }
               return NavigationRailDestination(
@@ -154,6 +157,47 @@ class _HomePageState extends State<HomePage> {
               child: const Icon(Icons.add),
             )
           : null, // Don't show FAB if not admin
+    );
+  }
+
+  // 플레이리스트 컨텐츠 빌드 (공략 카테고리용)
+  Widget _buildPlaylistContent() {
+    const String playlistId = 'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa';
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: FutureBuilder<List<PlaylistItem>>(
+            future: _apiService.getPlaylistItems(playlistId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text("에러 발생: ${snapshot.error}"));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text("등록된 공략 영상이 없습니다."));
+              }
+
+              final items = snapshot.data!;
+              return GridView.builder(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 300,
+                  childAspectRatio: 0.8,
+                  crossAxisSpacing: 20,
+                  mainAxisSpacing: 20,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return _buildPlaylistCard(item);
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -190,6 +234,13 @@ class _HomePageState extends State<HomePage> {
 
   // 영상 컨텐츠 영역 빌드 (필터링 로직 포함)
   Widget _buildVideoContent() {
+    String selectedCategory = _categories[_selectedIndex];
+    
+    // "공략" 카테고리일 때 플레이리스트 표시
+    if (selectedCategory == '공략') {
+      return _buildPlaylistContent();
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -214,7 +265,6 @@ class _HomePageState extends State<HomePage> {
               
               // 1단계: 메인 카테고리 필터링
               List<RaidVideo> categoryFilteredVideos;
-              String selectedCategory = _categories[_selectedIndex];
               if (_selectedIndex == 0) {
                 categoryFilteredVideos = allVideos; // 전체보기
               } else {
@@ -369,6 +419,72 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       "${video.gate} | ${video.uploaderName}",
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 플레이리스트 카드 위젯 (공략용)
+  Widget _buildPlaylistCard(PlaylistItem item) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () async {
+          if (await canLaunchUrl(Uri.parse(item.youtubeUrl))) {
+            await launchUrl(Uri.parse(item.youtubeUrl));
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('유튜브 링크를 열 수 없습니다: ${item.youtubeUrl}')),
+            );
+          }
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 썸네일 영역
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: item.thumbnailUrl.isNotEmpty
+                  ? Image.network(item.thumbnailUrl, fit: BoxFit.cover,
+                      errorBuilder: (ctx, _, __) => Container(
+                          color: Colors.grey,
+                          child: const Icon(Icons.broken_image)))
+                  : Container(
+                      color: Colors.black12,
+                      child: const Icon(Icons.videocam, size: 50)),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      item.channelTitle,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.primary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.publishedAt,
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
                 ),
