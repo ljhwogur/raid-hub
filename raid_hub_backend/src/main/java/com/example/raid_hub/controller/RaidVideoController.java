@@ -1,5 +1,7 @@
-package com.example.raid_hub;
+package com.example.raid_hub.controller;
 
+import com.example.raid_hub.entity.RaidVideo;
+import com.example.raid_hub.service.RaidVideoService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

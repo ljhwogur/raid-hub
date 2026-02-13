@@ -1,5 +1,7 @@
-package com.example.raid_hub;
+package com.example.raid_hub.service;
 
+import com.example.raid_hub.entity.RaidVideo;
+import com.example.raid_hub.repository.RaidVideoRepository;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;

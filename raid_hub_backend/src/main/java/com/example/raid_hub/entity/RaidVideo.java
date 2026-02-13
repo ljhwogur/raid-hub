@@ -1,4 +1,4 @@
-package com.example.raid_hub;
+package com.example.raid_hub.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
