@@ -212,17 +212,31 @@ class _HomePageState extends State<HomePage> {
                 final keywords = _guideKeywords.where((k) => k != '전체' && k != '기타').toList();
                 filteredItems = allItems.where((item) {
                   return !keywords.any((keyword) {
-                    // 매핑된 검색어가 있으면 그것을 사용, 없으면 키워드 자체를 사용
-                    final searchTerm = _keywordMapping[keyword] ?? keyword;
-                    return item.title.contains(searchTerm);
+                    // 원래 키워드가 있으면 true, 없으면 매핑된 검색어 확인
+                    if (item.title.contains(keyword)) {
+                      return true;
+                    }
+                    // 매핑된 검색어가 있으면 그것도 확인
+                    final mappedTerm = _keywordMapping[keyword];
+                    if (mappedTerm != null && item.title.contains(mappedTerm)) {
+                      return true;
+                    }
+                    return false;
                   });
                 }).toList();
               } else {
-                // 매핑된 검색어가 있으면 그것을 사용, 없으면 키워드 자체를 사용
-                final searchTerm = _keywordMapping[_selectedGuideKeyword] ?? _selectedGuideKeyword;
-                filteredItems = allItems.where((item) => 
-                  item.title.contains(searchTerm)
-                ).toList();
+                // 원래 키워드가 있는지 먼저 확인, 없으면 매핑된 검색어 사용
+                filteredItems = allItems.where((item) {
+                  if (item.title.contains(_selectedGuideKeyword)) {
+                    return true;
+                  }
+                  // 매핑된 검색어가 있으면 그것으로 검색
+                  final mappedTerm = _keywordMapping[_selectedGuideKeyword];
+                  if (mappedTerm != null && item.title.contains(mappedTerm)) {
+                    return true;
+                  }
+                  return false;
+                }).toList();
               }
               
               if (filteredItems.isEmpty) {
