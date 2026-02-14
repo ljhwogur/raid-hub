@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Import Provider
-import 'package:url_launcher/url_launcher.dart'; // 유튜브 링크 열기용 (추가 필요, 없으면 에러날 수 있으니 일단 로직만 구현하거나 패키지 추가)
 import 'models/raid_video.dart';
 import 'models/playlist_item.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart'; // Import AuthService
 import 'screens/login_screen.dart'; // Import LoginScreen
+import 'screens/video_player_screen.dart'; // Import VideoPlayerScreen
 
 void main() {
   runApp(
@@ -45,8 +45,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   final ApiService _apiService = ApiService();
-  late Future<List<RaidVideo>> _videosFuture;
-  late Future<List<PlaylistItem>> _playlistItemsFuture;
+
+  // Data
+  List<RaidVideo> _allVideos = [];
+  List<PlaylistItem> _allPlaylistItems = [];
+
+  // Filtered Data
+  List<RaidVideo> _filteredVideos = [];
+  List<PlaylistItem> _filteredPlaylistItems = [];
+
+  // Loading State
+  bool _isLoading = true;
 
   // 필터용 상태 변수들
   String _selectedLegionRaid = '전체';
@@ -89,23 +98,45 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _refreshVideos();
-    _loadPlaylistItems();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (!_isLoading) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    try {
+      const String playlistId = 'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa';
+      final results = await Future.wait([
+        _apiService.getVideos(),
+        _apiService.getPlaylistItems(playlistId),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _allVideos = results[0] as List<RaidVideo>;
+          _allPlaylistItems = results[1] as List<PlaylistItem>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("데이터 로딩 중 에러 발생: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _refreshVideos() {
-    setState(() {
-      _videosFuture = _apiService.getVideos();
-    });
-  }
-
-  void _loadPlaylistItems() {
-    const String playlistId = 'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa';
-    _playlistItemsFuture = _apiService.getPlaylistItems(playlistId);
+    _loadData();
   }
 
   void _onCategorySelected(int index) {
-    // '관리자 로그인' 카테고리인 경우 LoginScreen으로 이동
     if (_categories[index] == '관리자 로그인') {
       Navigator.push(
         context,
@@ -116,26 +147,81 @@ class _HomePageState extends State<HomePage> {
     
     setState(() {
       _selectedIndex = index;
-      // 다른 카테고리를 선택하면 하위 필터들을 '전체'로 리셋
       _selectedLegionRaid = '전체';
       _selectedDifficultyFilter = '전체';
       _selectedGuideKeyword = '전체';
     });
   }
 
+  void _applyFilters() {
+    // --- Video Filtering ---
+    final selectedCategory = _categories[_selectedIndex];
+    List<RaidVideo> categoryFilteredVideos;
+    if (_selectedIndex == 0) {
+      categoryFilteredVideos = _allVideos;
+    } else {
+      List<String>? targetRaids = _raidByCategory[selectedCategory];
+      categoryFilteredVideos = _allVideos.where((video) => targetRaids?.contains(video.raidName) ?? false).toList();
+    }
+
+    List<RaidVideo> legionRaidFilteredVideos;
+    if (selectedCategory == '군단장 레이드' && _selectedLegionRaid != '전체') {
+      legionRaidFilteredVideos = categoryFilteredVideos.where((video) => video.raidName == _selectedLegionRaid).toList();
+    } else {
+      legionRaidFilteredVideos = categoryFilteredVideos;
+    }
+
+    final availableDifficulties = ['전체', ...legionRaidFilteredVideos.map((v) => v.difficulty).toSet().toList()];
+    if (!availableDifficulties.contains(_selectedDifficultyFilter)) {
+      // This is now safe because it happens during the build, not in a callback that triggers a rebuild.
+      _selectedDifficultyFilter = '전체';
+    }
+
+    if (_selectedDifficultyFilter != '전체') {
+      _filteredVideos = legionRaidFilteredVideos.where((video) => video.difficulty == _selectedDifficultyFilter).toList();
+    } else {
+      _filteredVideos = legionRaidFilteredVideos;
+    }
+
+    // --- Playlist Filtering ---
+    List<PlaylistItem> filteredItems;
+    if (_selectedGuideKeyword == '전체') {
+      filteredItems = _allPlaylistItems;
+    } else if (_selectedGuideKeyword == '기타') {
+      final keywords = _guideKeywords.where((k) => k != '전체' && k != '기타').toList();
+      filteredItems = _allPlaylistItems.where((item) {
+        return !keywords.any((keyword) {
+          if (item.title.contains(keyword)) return true;
+          final mappedTerm = _keywordMapping[keyword];
+          return mappedTerm != null && item.title.contains(mappedTerm);
+        });
+      }).toList();
+    } else {
+      filteredItems = _allPlaylistItems.where((item) {
+        if (item.title.contains(_selectedGuideKeyword)) return true;
+        final mappedTerm = _keywordMapping[_selectedGuideKeyword];
+        return mappedTerm != null && item.title.contains(mappedTerm);
+      }).toList();
+    }
+    _filteredPlaylistItems = filteredItems;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context); // Access AuthService
+    // Apply filters on every build to ensure UI is consistent with the state.
+    if (!_isLoading) {
+      _applyFilters();
+    }
+    
+    final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lost Ark Raid Hub'),
         actions: [
-          if (authService.isAuthenticated) // Show logout button if authenticated
+          if (authService.isAuthenticated)
             TextButton.icon(
-              onPressed: () {
-                authService.logout();
-              },
+              onPressed: () => authService.logout(),
               icon: const Icon(Icons.logout),
               label: const Text('Logout'),
             ),
@@ -143,10 +229,9 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Row(
         children: [
-          // 왼쪽 사이드바 (NavigationRail)
           NavigationRail(
             selectedIndex: _selectedIndex,
-            onDestinationSelected: _onCategorySelected, // 변경된 콜백 사용
+            onDestinationSelected: _onCategorySelected,
             labelType: NavigationRailLabelType.all,
             destinations: _categories.map((category) {
               IconData icon;
@@ -166,105 +251,57 @@ class _HomePageState extends State<HomePage> {
             }).toList(),
           ),
           const VerticalDivider(thickness: 1, width: 1),
-          // 메인 컨텐츠 영역
           Expanded(
-            child: _buildVideoContent(),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _buildContent(),
           ),
         ],
       ),
-      floatingActionButton: authService.isAdmin // Show FAB only if admin
+      floatingActionButton: authService.isAdmin
           ? FloatingActionButton(
               onPressed: _showAddVideoDialog,
               child: const Icon(Icons.add),
             )
-          : null, // Don't show FAB if not admin
+          : null,
     );
   }
 
-  // 플레이리스트 컨텐츠 빌드 (공략 카테고리용)
+  Widget _buildContent() {
+    final selectedCategory = _categories[_selectedIndex];
+    if (selectedCategory == '공략') {
+      return _buildPlaylistContent();
+    }
+    return _buildVideoContent();
+  }
+
   Widget _buildPlaylistContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 공략 키워드 필터
         _buildGuideKeywordFilters(),
-        
         Expanded(
-          child: FutureBuilder<List<PlaylistItem>>(
-            future: _playlistItemsFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text("에러 발생: ${snapshot.error}"));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text("등록된 공략 영상이 없습니다."));
-              }
-
-              final allItems = snapshot.data!;
-              
-              // 키워드 필터링
-              List<PlaylistItem> filteredItems;
-              if (_selectedGuideKeyword == '전체') {
-                filteredItems = allItems;
-              } else if (_selectedGuideKeyword == '기타') {
-                // 기타는 다른 모든 키워드에 해당하지 않는 것
-                final keywords = _guideKeywords.where((k) => k != '전체' && k != '기타').toList();
-                filteredItems = allItems.where((item) {
-                  return !keywords.any((keyword) {
-                    // 원래 키워드가 있으면 true, 없으면 매핑된 검색어 확인
-                    if (item.title.contains(keyword)) {
-                      return true;
-                    }
-                    // 매핑된 검색어가 있으면 그것도 확인
-                    final mappedTerm = _keywordMapping[keyword];
-                    if (mappedTerm != null && item.title.contains(mappedTerm)) {
-                      return true;
-                    }
-                    return false;
-                  });
-                }).toList();
-              } else {
-                // 원래 키워드가 있는지 먼저 확인, 없으면 매핑된 검색어 사용
-                filteredItems = allItems.where((item) {
-                  if (item.title.contains(_selectedGuideKeyword)) {
-                    return true;
-                  }
-                  // 매핑된 검색어가 있으면 그것으로 검색
-                  final mappedTerm = _keywordMapping[_selectedGuideKeyword];
-                  if (mappedTerm != null && item.title.contains(mappedTerm)) {
-                    return true;
-                  }
-                  return false;
-                }).toList();
-              }
-              
-              if (filteredItems.isEmpty) {
-                return const Center(child: Text("해당 키워드의 공략 영상이 없습니다."));
-              }
-
-              return GridView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 300,
-                  childAspectRatio: 0.8,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
+          child: _filteredPlaylistItems.isEmpty
+              ? const Center(child: Text("해당 키워드의 공략 영상이 없습니다."))
+              : GridView.builder(
+                  padding: const EdgeInsets.all(20),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 300,
+                    childAspectRatio: 0.8,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                  ),
+                  itemCount: _filteredPlaylistItems.length,
+                  itemBuilder: (context, index) {
+                    final item = _filteredPlaylistItems[index];
+                    return _buildPlaylistCard(item);
+                  },
                 ),
-                itemCount: filteredItems.length,
-                itemBuilder: (context, index) {
-                  final item = filteredItems[index];
-                  return _buildPlaylistCard(item);
-                },
-              );
-            },
-          ),
         ),
       ],
     );
   }
 
-  // 공략 키워드 필터 위젯
   Widget _buildGuideKeywordFilters() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -276,11 +313,9 @@ class _HomePageState extends State<HomePage> {
             label: Text(keyword),
             selected: _selectedGuideKeyword == keyword,
             onSelected: (selected) {
-              setState(() {
-                if (selected) {
-                  _selectedGuideKeyword = keyword;
-                }
-              });
+              if (selected) {
+                setState(() => _selectedGuideKeyword = keyword);
+              }
             },
           );
         }).toList(),
@@ -288,13 +323,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 하위 카테고리 필터 위젯 (군단장 레이드용)
   Widget _buildSubCategoryFilters() {
-    // '군단장 레이드' 카테고리가 아니면 아무것도 보여주지 않음
     if (_categories[_selectedIndex] != '군단장 레이드') {
-      return const SizedBox.shrink(); // 빈 공간
+      return const SizedBox.shrink();
     }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Wrap(
@@ -305,13 +337,12 @@ class _HomePageState extends State<HomePage> {
             label: Text(raidName),
             selected: _selectedLegionRaid == raidName,
             onSelected: (selected) {
-              setState(() {
-                if (selected) {
+              if (selected) {
+                setState(() {
                   _selectedLegionRaid = raidName;
-                  // 군단장 필터 변경 시 난이도 필터도 리셋
                   _selectedDifficultyFilter = '전체';
-                }
-              });
+                });
+              }
             },
           );
         }).toList(),
@@ -319,112 +350,46 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 영상 컨텐츠 영역 빌드 (필터링 로직 포함)
   Widget _buildVideoContent() {
-    String selectedCategory = _categories[_selectedIndex];
-    
-    // "공략" 카테고리일 때 플레이리스트 표시
-    if (selectedCategory == '공략') {
-      return _buildPlaylistContent();
-    }
-    
+    // Note: availableDifficulties logic moved inside _applyFilters, but we still need it for building the widget.
+    final availableDifficulties = ['전체', ..._allVideos.where((v) {
+        final selectedCategory = _categories[_selectedIndex];
+        if (selectedCategory == '군단장 레이드' && _selectedLegionRaid != '전체') {
+            return v.raidName == _selectedLegionRaid;
+        }
+        List<String>? targetRaids = _raidByCategory[selectedCategory];
+        return targetRaids?.contains(v.raidName) ?? (_selectedIndex == 0);
+    }).map((v) => v.difficulty).toSet().toList()];
+
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 하위 카테고리 필터
         _buildSubCategoryFilters(),
-
-        // 영상 리스트
+        _buildDifficultyFilters(availableDifficulties),
         Expanded(
-          child: FutureBuilder<List<RaidVideo>>(
-            future: _videosFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text("에러 발생: ${snapshot.error}"));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text("등록된 영상이 없습니다."));
-              }
-
-              // --- 필터링 로직 시작 ---
-              final allVideos = snapshot.data!;
-              
-              // 1단계: 메인 카테고리 필터링
-              List<RaidVideo> categoryFilteredVideos;
-              if (_selectedIndex == 0) {
-                categoryFilteredVideos = allVideos; // 전체보기
-              } else {
-                List<String>? targetRaids = _raidByCategory[selectedCategory];
-                if (targetRaids == null) {
-                  categoryFilteredVideos = [];
-                } else {
-                  categoryFilteredVideos = allVideos.where((video) => targetRaids.contains(video.raidName)).toList();
-                }
-              }
-
-              // 2단계: 군단장 레이드 하위 카테고리 필터링
-              List<RaidVideo> legionRaidFilteredVideos;
-              if (selectedCategory == '군단장 레이드' && _selectedLegionRaid != '전체') {
-                legionRaidFilteredVideos = categoryFilteredVideos.where((video) => video.raidName == _selectedLegionRaid).toList();
-              } else {
-                legionRaidFilteredVideos = categoryFilteredVideos;
-              }
-
-              // 3단계: 현재 필터링된 영상들에서 동적으로 난이도 목록 추출
-              final availableDifficulties = ['전체', ...legionRaidFilteredVideos.map((v) => v.difficulty).toSet().toList()];
-
-              // 4단계: 최종 난이도 필터링
-              List<RaidVideo> finalFilteredVideos;
-              if (_selectedDifficultyFilter != '전체') {
-                finalFilteredVideos = legionRaidFilteredVideos.where((video) => video.difficulty == _selectedDifficultyFilter).toList();
-              } else {
-                finalFilteredVideos = legionRaidFilteredVideos;
-              }
-              // --- 필터링 로직 끝 ---
-
-              if (finalFilteredVideos.isEmpty) {
-                return Column(
-                  children: [
-                    _buildDifficultyFilters(availableDifficulties), // 필터는 계속 보여줌
-                    const Expanded(
-                      child: Center(child: Text("이 카테고리에 해당하는 영상이 없습니다."))
-                    ),
-                  ],
-                );
-              }
-
-              return Column(
-                children: [
-                  _buildDifficultyFilters(availableDifficulties),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 300,
-                        childAspectRatio: 0.8,
-                        crossAxisSpacing: 20,
-                        mainAxisSpacing: 20,
-                      ),
-                      itemCount: finalFilteredVideos.length,
-                      itemBuilder: (context, index) {
-                        final video = finalFilteredVideos[index];
-                        return _buildVideoCard(video);
-                      },
-                    ),
+          child: _filteredVideos.isEmpty
+              ? const Center(child: Text("이 카테고리에 해당하는 영상이 없습니다."))
+              : GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 300,
+                    childAspectRatio: 0.8,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
                   ),
-                ],
-              );
-            },
-          ),
+                  itemCount: _filteredVideos.length,
+                  itemBuilder: (context, index) {
+                    final video = _filteredVideos[index];
+                    return _buildVideoCard(video);
+                  },
+                ),
         ),
       ],
     );
   }
 
-  // 난이도 필터 위젯
   Widget _buildDifficultyFilters(List<String> difficulties) {
-    // '전체' 와 유니크한 난이도 1개만 있으면 굳이 필터 안보여줌
     if (difficulties.length <= 2) {
       return const SizedBox.shrink();
     }
@@ -438,19 +403,15 @@ class _HomePageState extends State<HomePage> {
             label: Text(difficulty),
             selected: _selectedDifficultyFilter == difficulty,
             onSelected: (selected) {
-              setState(() {
-                if (selected) {
-                  _selectedDifficultyFilter = difficulty;
-                }
-              });
+              if (selected) {
+                setState(() => _selectedDifficultyFilter = difficulty);
+              }
             },
           );
         }).toList(),
       ),
     );
   }
-
-
 
   // 영상 카드 위젯
   Widget _buildVideoCard(RaidVideo video) {
@@ -459,19 +420,25 @@ class _HomePageState extends State<HomePage> {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () async {
-          if (await canLaunchUrl(Uri.parse(video.youtubeUrl))) {
-            await launchUrl(Uri.parse(video.youtubeUrl));
+        onTap: () {
+          print('Video card tapped: ${video.title}');
+          final videoId = _getYouTubeVideoId(video.youtubeUrl);
+          if (videoId != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VideoPlayerScreen(videoId: videoId),
+              ),
+            );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('유튜브 링크를 열 수 없습니다: ${video.youtubeUrl}')),
+              const SnackBar(content: Text('유튜브 비디오 ID를 찾을 수 없습니다.')),
             );
           }
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 썸네일 영역
             AspectRatio(
               aspectRatio: 16 / 9,
               child: thumbnailUrl != null
@@ -522,19 +489,25 @@ class _HomePageState extends State<HomePage> {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () async {
-          if (await canLaunchUrl(Uri.parse(item.youtubeUrl))) {
-            await launchUrl(Uri.parse(item.youtubeUrl));
+        onTap: () {
+          print('Playlist item card tapped: ${item.title}');
+          final videoId = _getYouTubeVideoId(item.youtubeUrl);
+          if (videoId != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VideoPlayerScreen(videoId: videoId),
+              ),
+            );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('유튜브 링크를 열 수 없습니다: ${item.youtubeUrl}')),
+              const SnackBar(content: Text('유튜브 비디오 ID를 찾을 수 없습니다.')),
             );
           }
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 썸네일 영역
             AspectRatio(
               aspectRatio: 16 / 9,
               child: item.thumbnailUrl.isNotEmpty
@@ -583,37 +556,39 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 유튜브 URL에서 썸네일 추출
-  String? _getYouTubeThumbnail(String url) {
+  String? _getYouTubeVideoId(String url) {
     try {
       Uri uri = Uri.parse(url);
-      String? videoId;
       if (uri.host.contains("youtu.be")) {
-        videoId = uri.pathSegments.first;
+        return uri.pathSegments.first;
       } else if (uri.host.contains("youtube.com")) {
-        videoId = uri.queryParameters['v'];
-      }
-      if (videoId != null) {
-        return "https://img.youtube.com/vi/$videoId/mqdefault.jpg";
+        return uri.queryParameters['v'];
       }
     } catch (e) {
-      return null;
+      // Handle parsing error if needed
     }
     return null;
   }
 
-  // 영상 등록 다이얼로그
+  String? _getYouTubeThumbnail(String url) {
+    final videoId = _getYouTubeVideoId(url);
+    if (videoId != null) {
+      return "https://img.youtube.com/vi/$videoId/mqdefault.jpg";
+    }
+    return null;
+  }
+
   void _showAddVideoDialog() {
     showDialog(
       context: context,
       builder: (context) => VideoUploadDialog(
-        categories: _categories.sublist(1), // '전체' 제외
+        categories: _categories.sublist(1),
         raidByCategory: _raidByCategory,
         onUpload: (video) async {
           try {
             await _apiService.createVideo(video);
             Navigator.pop(context);
-            _refreshVideos(); // 목록 새로고침
+            _refreshVideos();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('영상이 성공적으로 등록되었습니다!')),
             );
@@ -648,8 +623,7 @@ class VideoUploadDialog extends StatefulWidget {
 class _VideoUploadDialogState extends State<VideoUploadDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  // 입력 값 저장 변수
-  String _selectedCategory = ''; // 초기값 설정
+  String _selectedCategory = '';
   String? _selectedRaidName;
   String? _selectedDifficulty;
 
@@ -658,17 +632,13 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
   final _uploaderController = TextEditingController();
   final _gateController = TextEditingController();
 
-  // 모든 레이드에 대한 포괄적인 난이도 정의
   static const Map<String, List<String>> _comprehensiveRaidDifficulties = {
-    // 군단장 레이드
     '발탄': ['싱글', '노말', '하드'],
     '비아키스': ['싱글', '노말', '하드'],
     '아브렐슈드': ['싱글', '노말', '하드'],
     '일리아칸': ['싱글', '노말', '하드'],
     '카멘': ['싱글', '노말', '하드'],
     '쿠크세이튼': ['싱글', '노말'],
-
-    // 에픽 레이드
     '베히모스': ['노말'],
     '(서막)에키드나': ['싱글', '노말', '하드'],
     '(1막)에기르': ['싱글', '노말', '하드'],
@@ -676,8 +646,6 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
     '(3막)모르둠': ['싱글', '노말', '하드'],
     '(4막)아르모체': ['노말', '하드'],
     '(종막)카제로스': ['노말', '하드'],
-
-    // 그림자 레이드
     '세르카': ['노말', '하드', '나이트메어'],
   };
 
@@ -690,16 +658,13 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
   }
 
   void _updateAvailableDifficulties() {
-    // 현재 선택된 레이드 이름이 종합 맵에 있는지 확인하고 해당하는 난이도 목록을 가져옴
-    final availableDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? ['노말', '하드']; // 기본값 설정 (명확하게 알 수 없는 경우)
+    final availableDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? ['노말', '하드'];
     
-    // 현재 선택된 난이도가 유효한지 확인하고, 유효하지 않으면 첫 번째 난이도로 설정
     if (_selectedDifficulty == null || !availableDifficulties.contains(_selectedDifficulty)) {
       _selectedDifficulty = availableDifficulties.first;
     }
   }
 
-  // 난이도 드롭다운의 유효성 검사기
   String? _difficultyValidator(String? value) {
     if (value == null || value.isEmpty) {
       return '난이도를 선택하세요';
@@ -713,8 +678,7 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // 현재 선택된 레이드에 맞는 난이도 목록
-    final currentRaidDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? ['노말', '하드']; // 알 수 없는 레이드의 기본 난이도
+    final currentRaidDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? ['노말', '하드'];
 
     return AlertDialog(
       title: const Text('공략 영상 등록'),
@@ -724,7 +688,6 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 카테고리 선택
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 decoration: const InputDecoration(labelText: '카테고리'),
@@ -732,13 +695,11 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                 onChanged: (val) {
                   setState(() {
                     _selectedCategory = val!;
-                    // 새 카테고리에 해당하는 첫 번째 레이드 이름으로 설정
                     _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
-                    _updateAvailableDifficulties(); // 난이도 목록 갱신
+                    _updateAvailableDifficulties();
                   });
                 },
               ),
-              // 레이드 이름 선택
               DropdownButtonFormField<String>(
                 value: _selectedRaidName,
                 decoration: const InputDecoration(labelText: '레이드 이름'),
@@ -746,37 +707,32 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                 onChanged: (val) {
                   setState(() {
                     _selectedRaidName = val;
-                    _updateAvailableDifficulties(); // 난이도 목록 갱신
+                    _updateAvailableDifficulties();
                   });
                 },
               ),
-              // 난이도
               DropdownButtonFormField<String>(
                 value: _selectedDifficulty,
                 decoration: const InputDecoration(labelText: '난이도'),
                 items: currentRaidDifficulties.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
                 onChanged: (val) => setState(() => _selectedDifficulty = val!),
-                validator: _difficultyValidator, // 난이도 유효성 검사기 추가
+                validator: _difficultyValidator,
               ),
-              // 제목
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: '영상 제목'),
                 validator: (val) => val!.isEmpty ? '제목을 입력하세요' : null,
               ),
-              // 유튜브 URL
               TextFormField(
                 controller: _urlController,
                 decoration: const InputDecoration(labelText: '유튜브 URL'),
                 validator: (val) => val!.isEmpty ? 'URL을 입력하세요' : null,
               ),
-              // 스트리머
               TextFormField(
                 controller: _uploaderController,
                 decoration: const InputDecoration(labelText: '스트리머/유튜버 이름'),
                 validator: (val) => val!.isEmpty ? '이름을 입력하세요' : null,
               ),
-              // 관문
               TextFormField(
                 controller: _gateController,
                 decoration: const InputDecoration(labelText: '관문 (예: 1관문, 전체)'),
