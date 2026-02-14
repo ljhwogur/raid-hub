@@ -51,8 +51,11 @@ class _HomePageState extends State<HomePage> {
   // 필터용 상태 변수들
   String _selectedLegionRaid = '전체';
   String _selectedDifficultyFilter = '전체';
+  String _selectedGuideKeyword = '전체';
 
   final List<String> _legionRaids = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘'];
+
+  final List<String> _guideKeywords = ['전체', '카양겔', '아브렐슈드', '비아키스', '쿠크세이튼', '일리아칸', '에키드나', '상아탑', '카멘', '베히모스', '발탄', '쿠크', '에기르', '2막', '3막', '4막', '종막', '기타'];
 
   // 카테고리 정의
   final List<String> _categories = [
@@ -106,6 +109,7 @@ class _HomePageState extends State<HomePage> {
       // 다른 카테고리를 선택하면 하위 필터들을 '전체'로 리셋
       _selectedLegionRaid = '전체';
       _selectedDifficultyFilter = '전체';
+      _selectedGuideKeyword = '전체';
     });
   }
 
@@ -172,6 +176,9 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 공략 키워드 필터
+        _buildGuideKeywordFilters(),
+        
         Expanded(
           child: FutureBuilder<List<PlaylistItem>>(
             future: _playlistItemsFuture,
@@ -184,7 +191,28 @@ class _HomePageState extends State<HomePage> {
                 return const Center(child: Text("등록된 공략 영상이 없습니다."));
               }
 
-              final items = snapshot.data!;
+              final allItems = snapshot.data!;
+              
+              // 키워드 필터링
+              List<PlaylistItem> filteredItems;
+              if (_selectedGuideKeyword == '전체') {
+                filteredItems = allItems;
+              } else if (_selectedGuideKeyword == '기타') {
+                // 기타는 다른 모든 키워드에 해당하지 않는 것
+                final keywords = _guideKeywords.where((k) => k != '전체' && k != '기타').toList();
+                filteredItems = allItems.where((item) {
+                  return !keywords.any((keyword) => item.title.contains(keyword));
+                }).toList();
+              } else {
+                filteredItems = allItems.where((item) => 
+                  item.title.contains(_selectedGuideKeyword)
+                ).toList();
+              }
+              
+              if (filteredItems.isEmpty) {
+                return const Center(child: Text("해당 키워드의 공략 영상이 없습니다."));
+              }
+
               return GridView.builder(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -193,9 +221,9 @@ class _HomePageState extends State<HomePage> {
                   crossAxisSpacing: 20,
                   mainAxisSpacing: 20,
                 ),
-                itemCount: items.length,
+                itemCount: filteredItems.length,
                 itemBuilder: (context, index) {
-                  final item = items[index];
+                  final item = filteredItems[index];
                   return _buildPlaylistCard(item);
                 },
               );
@@ -203,6 +231,30 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ],
+    );
+  }
+
+  // 공략 키워드 필터 위젯
+  Widget _buildGuideKeywordFilters() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Wrap(
+        spacing: 8.0,
+        runSpacing: 4.0,
+        children: _guideKeywords.map((keyword) {
+          return ChoiceChip(
+            label: Text(keyword),
+            selected: _selectedGuideKeyword == keyword,
+            onSelected: (selected) {
+              setState(() {
+                if (selected) {
+                  _selectedGuideKeyword = keyword;
+                }
+              });
+            },
+          );
+        }).toList(),
+      ),
     );
   }
 
