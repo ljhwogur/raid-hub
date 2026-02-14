@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoId;
@@ -16,68 +16,57 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: true,
-        mute: false,
-        disableDragSeek: false,
-        loop: false,
-        isLive: false,
-        forceHD: false,
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: widget.videoId,
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
         enableCaption: true,
+        mute: false,
       ),
-    )..addListener(listener);
-  }
-
-  void listener() {
-    if (mounted && !_controller.value.isFullScreen) {
-      setState(() {
-        // You can add logic here to react to player state changes
-      });
-    }
+    );
   }
 
   @override
   void deactivate() {
-    // Pauses video while navigating away
-    _controller.pause();
     super.deactivate();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return YoutubePlayerBuilder(
-      player: YoutubePlayer(
-        controller: _controller,
-        showVideoProgressIndicator: true,
-        progressIndicatorColor: Colors.blueAccent,
-        bottomActions: [
-          CurrentPosition(),
-          ProgressBar(),
-          RemainingDuration(),
-          FullScreenButton(),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('YouTube Player'),
       ),
-      builder: (context, player) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('YouTube Player'),
-          ),
-          body: Column(
-            children: [
-              player,
-              // You can add more widgets below the player if needed
-            ],
-          ),
-        );
-      },
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth;
+            final playerHeight = maxWidth * 9 / 16;
+            return Column(
+              children: [
+                Center(
+                  child: SizedBox(
+                    width: maxWidth,
+                    height: playerHeight,
+                    child: YoutubePlayer(
+                      controller: _controller,
+                    ),
+                  ),
+                ),
+                // You can add more widgets below the player if needed
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
