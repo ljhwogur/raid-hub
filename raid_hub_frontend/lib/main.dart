@@ -55,7 +55,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<String> _legionRaids = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘'];
 
-  final List<String> _guideKeywords = ['전체', '카양겔', '아브렐슈드', '비아키스', '쿠크세이튼', '일리아칸', '에키드나', '상아탑', '카멘', '베히모스', '발탄', '쿠크', '에기르', '2막', '3막', '4막', '종막', '기타'];
+  final List<String> _guideKeywords = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘', '카양겔', '상아탑', '베히모스', '서막', '1막',  '2막', '3막', '4막', '종막', '기타'];
 
   // 카테고리 정의
   final List<String> _categories = [
