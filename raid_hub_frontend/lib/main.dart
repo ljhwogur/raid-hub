@@ -55,7 +55,17 @@ class _HomePageState extends State<HomePage> {
 
   final List<String> _legionRaids = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘'];
 
-  final List<String> _guideKeywords = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘', '카양겔', '상아탑', '베히모스', '서막', '1막',  '2막', '3막', '4막', '종막', '기타'];
+  final List<String> _guideKeywords = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘', '카양겔', '상아탑', '베히모스', '서막', '1막', '2막', '3막', '4막', '종막', '기타'];
+
+  // 키워드 표시명 => 실제 검색어 매핑
+  final Map<String, String> _keywordMapping = {
+    '서막': '에키드나',
+    '1막': '에기르',
+    '2막': '아브렐슈드',
+    '3막': '모르둠',
+    '4막': '아르모체',
+    '종막': '카제로스',
+  };
 
   // 카테고리 정의
   final List<String> _categories = [
@@ -201,11 +211,17 @@ class _HomePageState extends State<HomePage> {
                 // 기타는 다른 모든 키워드에 해당하지 않는 것
                 final keywords = _guideKeywords.where((k) => k != '전체' && k != '기타').toList();
                 filteredItems = allItems.where((item) {
-                  return !keywords.any((keyword) => item.title.contains(keyword));
+                  return !keywords.any((keyword) {
+                    // 매핑된 검색어가 있으면 그것을 사용, 없으면 키워드 자체를 사용
+                    final searchTerm = _keywordMapping[keyword] ?? keyword;
+                    return item.title.contains(searchTerm);
+                  });
                 }).toList();
               } else {
+                // 매핑된 검색어가 있으면 그것을 사용, 없으면 키워드 자체를 사용
+                final searchTerm = _keywordMapping[_selectedGuideKeyword] ?? _selectedGuideKeyword;
                 filteredItems = allItems.where((item) => 
-                  item.title.contains(_selectedGuideKeyword)
+                  item.title.contains(searchTerm)
                 ).toList();
               }
               
