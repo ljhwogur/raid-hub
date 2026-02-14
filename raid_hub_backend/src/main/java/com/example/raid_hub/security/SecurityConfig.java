@@ -36,6 +36,8 @@ public class SecurityConfig {
                     .permitAll() // Allow user registration without authentication
                     .requestMatchers(HttpMethod.GET, "/api/users/check-username/**")
                     .permitAll() // Allow username check without authentication
+                    .requestMatchers(HttpMethod.GET, "/api/youtube/playlist-items")
+                    .permitAll() // Allow playlist items without authentication
                     .requestMatchers(HttpMethod.POST, "/api/videos")
                     .hasRole("ADMIN") // Only ADMIN can POST to /api/videos
                     .requestMatchers(HttpMethod.GET, "/api/**")
