@@ -109,16 +109,40 @@ class _HomePageState extends State<HomePage> {
     }
 
     try {
-      const String playlistId = 'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa';
-      final results = await Future.wait([
-        _apiService.getVideos(),
-        _apiService.getPlaylistItems(playlistId),
-      ]);
+      // 여러개의 플레이리스트 ID를 관리합니다.
+      const List<String> playlistIds = [
+        'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa', // 꿀맹이는 여왕님 - '로스트아크 공략'
+        'PLMAYHL7_2pknYPEMC7wcP1WFINEfCS9xX', // 바보온돌 - '[로스트아크]완전 공략'
+        'PLMAYHL7_2pknWRmpGLK6kbsit75Vu4YC0', // 바보온돌 - '[로스트아크]싱글모드 공략'
+        'PLMAYHL7_2pknNJ_VXH3jd-YtSZq13CBxc', // 바보온돌 - '[로스트아크]헬/시련 공략'
+        'PLMAYHL7_2pknM3ZUjR68XASaXnOPKy2gB', // 바보온돌 - '[로스트아크]어비스 레이드'
+        'PLMAYHL7_2pkkhJVv05QgpN8ZIb5AjzGZf' // 바보온돌 - '군단장 레이드'
+        // 여기에 다른 플레이리스트 ID를 추가할 수 있습니다. 예: '...다른ID...'
+      ];
+
+      // getVideos() Future를 기본으로 추가합니다.
+      List<Future> futures = [_apiService.getVideos()];
+
+      // 각 플레이리스트 ID에 대해 getPlaylistItems Future를 추가합니다.
+      for (final playlistId in playlistIds) {
+        futures.add(_apiService.getPlaylistItems(playlistId));
+      }
+
+      // 모든 Future가 완료될 때까지 기다립니다.
+      final results = await Future.wait(futures);
 
       if (mounted) {
         setState(() {
+          // 첫 번째 결과는 비디오 목록입니다.
           _allVideos = results[0] as List<RaidVideo>;
-          _allPlaylistItems = results[1] as List<PlaylistItem>;
+
+          // 나머지 결과들은 플레이리스트 아이템들의 리스트입니다.
+          // 이들을 하나의 리스트로 합칩니다.
+          _allPlaylistItems = results
+              .sublist(1) // getVideos 결과를 제외
+              .expand((items) => items as List<PlaylistItem>) // 각 플레이리스트의 아이템들을 펼쳐서
+              .toList(); // 하나의 리스트로 만듭니다.
+
           _isLoading = false;
         });
       }
