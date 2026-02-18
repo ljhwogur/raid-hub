@@ -222,12 +222,25 @@ class _HomePageState extends State<HomePage> {
       }).toList();
     } else {
       filteredItems = _allPlaylistItems.where((item) {
-        if (item.title.contains(_selectedGuideKeyword)) return true;
+        if (item.title.contains(_selectedGuideKeyword)) return _isValidGuideItem(item);
         final mappedTerm = _keywordMapping[_selectedGuideKeyword];
-        return mappedTerm != null && item.title.contains(mappedTerm);
+        return mappedTerm != null && item.title.contains(mappedTerm) && _isValidGuideItem(item);
       }).toList();
     }
     _filteredPlaylistItems = filteredItems;
+  }
+
+  bool _isValidGuideItem(PlaylistItem item) {
+    if (_selectedGuideKeyword != '2막') {
+      return true;
+    }
+
+    final publishedAt = DateTime.tryParse(item.publishedAt);
+    if (publishedAt == null) {
+      return true;
+    }
+
+    return publishedAt.year >= 2024;
   }
 
   @override
