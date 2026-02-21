@@ -47,21 +47,23 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth;
-            final playerHeight = maxWidth * 9 / 16;
-            return Column(
-              children: [
-                Center(
-                  child: SizedBox(
-                    width: maxWidth,
-                    height: playerHeight,
-                    child: YoutubePlayer(
-                      controller: _controller,
-                    ),
-                  ),
+            double playerWidth = constraints.maxWidth;
+            double playerHeight = playerWidth * 9 / 16;
+
+            if (playerHeight > constraints.maxHeight) {
+              playerHeight = constraints.maxHeight;
+              playerWidth = playerHeight * 16 / 9;
+            }
+
+            return Center(
+              child: SizedBox(
+                width: playerWidth,
+                height: playerHeight,
+                child: YoutubePlayer(
+                  controller: _controller,
+                  aspectRatio: 16 / 9,
                 ),
-                // You can add more widgets below the player if needed
-              ],
+              ),
             );
           },
         ),
