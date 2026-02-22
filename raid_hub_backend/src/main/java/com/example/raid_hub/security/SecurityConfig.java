@@ -40,6 +40,8 @@ public class SecurityConfig {
                     .permitAll() // Allow playlist items without authentication
                     .requestMatchers(HttpMethod.POST, "/api/videos")
                     .hasRole("ADMIN") // Only ADMIN can POST to /api/videos
+                    .requestMatchers(HttpMethod.DELETE, "/api/videos/**")
+                    .hasRole("ADMIN") // Only ADMIN can DELETE videos
                     .requestMatchers(HttpMethod.GET, "/api/**")
                     .permitAll() // Allow GET /api requests
                     .anyRequest()

@@ -57,4 +57,9 @@ public class RaidVideoService {
   public List<RaidVideo> getAllVideos() {
     return raidVideoRepository.findAll();
   }
+
+  @Transactional
+  public void deleteVideo(Long id) {
+    raidVideoRepository.deleteById(id);
+  }
 }

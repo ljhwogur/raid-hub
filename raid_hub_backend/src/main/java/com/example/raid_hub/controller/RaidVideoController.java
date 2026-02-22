@@ -25,4 +25,10 @@ public class RaidVideoController {
   public ResponseEntity<List<RaidVideo>> getAllVideos() {
     return ResponseEntity.ok(raidVideoService.getAllVideos());
   }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteVideo(@PathVariable Long id) {
+    raidVideoService.deleteVideo(id);
+    return ResponseEntity.noContent().build();
+  }
 }

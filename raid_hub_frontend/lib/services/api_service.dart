@@ -51,6 +51,22 @@ class ApiService {
     }
   }
 
+  Future<void> deleteVideo(int id) async {
+    try {
+      final response = await _client.delete(
+        Uri.parse('$baseUrl/$id'),
+        headers: _authService.getAuthHeaders(), // Include auth headers
+      );
+
+      if (response.statusCode != 204) {
+        throw Exception('Failed to delete video: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error deleting video: $e');
+      throw e;
+    }
+  }
+
   Future<List<PlaylistItem>> getPlaylistItems(String playlistId) async {
     try {
       final response = await _client.get(

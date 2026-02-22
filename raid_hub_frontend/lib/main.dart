@@ -308,6 +308,7 @@ class _HomePageState extends State<HomePage> {
   // 영상 카드 위젯 (DB 데이터)
   Widget _buildVideoCard(RaidVideo video) {
     String? thumbnailUrl = _getYouTubeThumbnail(video.youtubeUrl);
+    final authService = Provider.of<AuthService>(context, listen: false);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -316,63 +317,117 @@ class _HomePageState extends State<HomePage> {
         side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: InkWell(
-        onTap: () {
-          final videoId = _getYouTubeVideoId(video.youtubeUrl);
-          if (videoId != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => VideoPlayerScreen(videoId: videoId),
-              ),
-            );
-          }
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: thumbnailUrl != null
-                  ? Image.network(thumbnailUrl, fit: BoxFit.cover,
-                      errorBuilder: (ctx, _, __) => Container(
-                          color: Colors.grey,
-                          child: const Icon(Icons.broken_image)))
-                  : Container(
-                      color: Colors.black12,
-                      child: const Icon(Icons.videocam, size: 50)),
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () {
+              final videoId = _getYouTubeVideoId(video.youtubeUrl);
+              if (videoId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VideoPlayerScreen(videoId: videoId),
+                  ),
+                );
+              }
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: thumbnailUrl != null
+                      ? Image.network(thumbnailUrl, fit: BoxFit.cover,
+                          errorBuilder: (ctx, _, __) => Container(
+                              color: Colors.grey,
+                              child: const Icon(Icons.broken_image)))
+                      : Container(
+                          color: Colors.black12,
+                          child: const Icon(Icons.videocam, size: 50)),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          video.title,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "[관리자 등록] ${video.raidName} - ${video.difficulty}",
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "${video.gate} | ${video.uploaderName}",
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      video.title,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "[관리자 등록] ${video.raidName} - ${video.difficulty}",
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      "${video.gate} | ${video.uploaderName}",
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
+          ),
+          if (authService.isAdmin)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("영상 삭제"),
+                        content: const Text("정말로 이 영상을 삭제하시겠습니까?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text("취소"),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              Navigator.pop(ctx); // 다이얼로그 닫기
+                              try {
+                                await _apiService.deleteVideo(video.id!);
+                                _refreshVideos(); // 목록 새로고침
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text("영상이 삭제되었습니다.")),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text("삭제 실패: $e")),
+                                  );
+                                }
+                              }
+                            },
+                            child: const Text("삭제", style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
