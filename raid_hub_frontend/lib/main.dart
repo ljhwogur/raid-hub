@@ -502,61 +502,20 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
 
   late String _selectedCategory;
   String? _selectedRaidName;
-  String? _selectedDifficulty;
 
   final _titleController = TextEditingController();
   final _urlController = TextEditingController();
   final _uploaderController = TextEditingController();
-  final _gateController = TextEditingController();
-
-  static const Map<String, List<String>> _comprehensiveRaidDifficulties = {
-    '발탄': ['싱글', '노말', '하드'],
-    '비아키스': ['싱글', '노말', '하드'],
-    '아브렐슈드': ['싱글', '노말', '하드'],
-    '일리아칸': ['싱글', '노말', '하드'],
-    '카멘': ['싱글', '노말', '하드'],
-    '쿠크세이튼': ['싱글', '노말'],
-    '베히모스': ['노말'],
-    '(서막)에키드나': ['싱글', '노말', '하드'],
-    '(1막)에기르': ['싱글', '노말', '하드'],
-    '(2막)아브렐슈드': ['싱글', '노말', '하드'],
-    '(3막)모르둠': ['싱글', '노말', '하드'],
-    '(4막)아르모체': ['노말', '하드'],
-    '(종막)카제로스': ['노말', '하드'],
-    '세르카': ['노말', '하드', '나이트메어'],
-  };
 
   @override
   void initState() {
     super.initState();
     _selectedCategory = widget.raidByCategory.keys.first;
     _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
-    _updateAvailableDifficulties();
-  }
-
-  void _updateAvailableDifficulties() {
-    final availableDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? ['노말', '하드'];
-    
-    if (_selectedDifficulty == null || !availableDifficulties.contains(_selectedDifficulty)) {
-      _selectedDifficulty = availableDifficulties.first;
-    }
-  }
-
-  String? _difficultyValidator(String? value) {
-    if (value == null || value.isEmpty) {
-      return '난이도를 선택하세요';
-    }
-    final allowedDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? [];
-    if (!allowedDifficulties.contains(value)) {
-      return '선택된 레이드에 유효하지 않은 난이도입니다.';
-    }
-    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentRaidDifficulties = _comprehensiveRaidDifficulties[_selectedRaidName] ?? ['노말', '하드'];
-
     return AlertDialog(
       title: const Text('공략 영상 등록'),
       content: SingleChildScrollView(
@@ -574,7 +533,6 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                   setState(() {
                     _selectedCategory = val!;
                     _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
-                    _updateAvailableDifficulties();
                   });
                 },
               ),
@@ -585,16 +543,8 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                 onChanged: (val) {
                   setState(() {
                     _selectedRaidName = val;
-                    _updateAvailableDifficulties();
                   });
                 },
-              ),
-              DropdownButtonFormField<String>(
-                value: _selectedDifficulty,
-                decoration: const InputDecoration(labelText: '난이도'),
-                items: currentRaidDifficulties.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-                onChanged: (val) => setState(() => _selectedDifficulty = val!),
-                validator: _difficultyValidator,
               ),
               TextFormField(
                 controller: _titleController,
@@ -611,11 +561,6 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                 decoration: const InputDecoration(labelText: '스트리머/유튜버 이름'),
                 validator: (val) => val!.isEmpty ? '이름을 입력하세요' : null,
               ),
-              TextFormField(
-                controller: _gateController,
-                decoration: const InputDecoration(labelText: '관문 (예: 1관문, 전체)'),
-                validator: (val) => val!.isEmpty ? '관문을 입력하세요' : null,
-              ),
             ],
           ),
         ),
@@ -630,8 +575,8 @@ class _VideoUploadDialogState extends State<VideoUploadDialog> {
                 youtubeUrl: _urlController.text,
                 uploaderName: _uploaderController.text,
                 raidName: _selectedRaidName!,
-                difficulty: _selectedDifficulty!,
-                gate: _gateController.text,
+                difficulty: '공략', // 기본값 설정
+                gate: '전체',       // 기본값 설정
               );
               widget.onUpload(video);
             }

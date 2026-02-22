@@ -58,6 +58,7 @@ public class SecurityConfig {
                           responseMap.put("success", true);
                           responseMap.put("message", "성공적으로 로그인하였습니다.");
                           responseMap.put("username", authentication.getName());
+                          responseMap.put("sessionId", request.getSession().getId()); // 세션 ID 추가
                           response.getWriter().write(objectMapper.writeValueAsString(responseMap));
                         })
                     .failureHandler(
@@ -87,6 +88,7 @@ public class SecurityConfig {
     config.setAllowedOrigins(Arrays.asList("http://localhost:53551"));
     config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(Arrays.asList("*"));
+    config.setExposedHeaders(Arrays.asList("Set-Cookie"));
     config.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -89,10 +89,11 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
 
       if (response.statusCode == 200) {
         // Login successful
-        String? rawCookie = response.headers['set-cookie'];
-        if (rawCookie != null) {
-          int index = rawCookie.indexOf(';');
-          _sessionCookie = (index == -1) ? rawCookie : rawCookie.substring(0, index);
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final String? sessionId = responseBody['sessionId'];
+
+        if (sessionId != null) {
+          _sessionCookie = 'JSESSIONID=$sessionId';
           _username = username;
           if (username == 'admin') {
             _role = 'ADMIN';
@@ -100,12 +101,12 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
             _role = 'USER';
           }
           _loginErrorMessage = null;
-          print('Login successful. Session Cookie: $_sessionCookie, Role: $_role');
+          print('Login successful. Session ID: $sessionId, Role: $_role');
           notifyListeners(); // Notify listeners of state change
           return true;
         }
         _loginErrorMessage = '다시 시도해주세요';
-        return false; // No cookie received
+        return false; // No session ID received
       } else {
         // Try to parse error message from response
         try {

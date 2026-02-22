@@ -28,17 +28,24 @@ class ApiService {
   }
 
   Future<RaidVideo> createVideo(RaidVideo video) async {
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: _authService.getAuthHeaders(), // Include auth headers
-      body: jsonEncode(video.toJson()),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(baseUrl),
+        headers: _authService.getAuthHeaders(), // Include auth headers
+        body: jsonEncode(video.toJson()),
+      );
 
-    if (response.statusCode == 200) {
-       // UTF-8 디코딩 처리
-      return RaidVideo.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
-    } else {
-      throw Exception('Failed to create video: ${response.statusCode}');
+      if (response.statusCode == 200) {
+         // UTF-8 디코딩 처리
+        return RaidVideo.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+      } else {
+        print('Video creation failed. Status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Failed to create video: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error creating video: $e');
+      throw e;
     }
   }
 
