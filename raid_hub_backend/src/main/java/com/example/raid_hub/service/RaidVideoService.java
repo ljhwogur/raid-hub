@@ -16,7 +16,7 @@ public class RaidVideoService {
 
   @Transactional
   public RaidVideo createVideo(RaidVideo video) {
-    validateDifficultyForRaid(video.getRaidName(), video.getDifficulty());
+    // validateDifficultyForRaid(video.getRaidName(), video.getDifficulty());
     return raidVideoRepository.save(video);
   }
 
