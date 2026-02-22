@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<String> _legionRaids = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘'];
 
-  final List<String> _guideKeywords = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘', '카양겔', '상아탑', '베히모스', '서막', '1막', '2막', '3막', '4막', '종막', '기타'];
+  final List<String> _guideKeywords = ['전체', '발탄', '비아키스', '쿠크세이튼', '아브렐슈드', '일리아칸', '카멘', '카양겔', '상아탑', '베히모스', '서막', '1막', '2막', '3막', '4막', '종막', '세르카', '기타'];
 
   // 키워드 표시명 => 실제 검색어 매핑
   final Map<String, String> _keywordMapping = {
@@ -112,11 +112,12 @@ class _HomePageState extends State<HomePage> {
       // 여러개의 플레이리스트 ID를 관리합니다.
       const List<String> playlistIds = [
         'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa', // 꿀맹이는 여왕님 - '로스트아크 공략'
-        'PLMAYHL7_2pknYPEMC7wcP1WFINEfCS9xX', // 바보온돌 - '[로스트아크]완전 공략'
+//         'PLMAYHL7_2pknYPEMC7wcP1WFINEfCS9xX', // 바보온돌 - '[로스트아크]완전 공략'
         'PLMAYHL7_2pknWRmpGLK6kbsit75Vu4YC0', // 바보온돌 - '[로스트아크]싱글모드 공략'
         'PLMAYHL7_2pknNJ_VXH3jd-YtSZq13CBxc', // 바보온돌 - '[로스트아크]헬/시련 공략'
         'PLMAYHL7_2pknM3ZUjR68XASaXnOPKy2gB', // 바보온돌 - '[로스트아크]어비스 레이드'
-        'PLMAYHL7_2pkkhJVv05QgpN8ZIb5AjzGZf' // 바보온돌 - '군단장 레이드'
+        'PLMAYHL7_2pkkhJVv05QgpN8ZIb5AjzGZf', // 바보온돌 - '군단장 레이드'
+        'PLQMXZuhZUJEBkcXgn9XPb_3xmMXpbXsy1'  // 김상드 - '로스트아크 공략'
         // 여기에 다른 플레이리스트 ID를 추가할 수 있습니다. 예: '...다른ID...'
       ];
 
