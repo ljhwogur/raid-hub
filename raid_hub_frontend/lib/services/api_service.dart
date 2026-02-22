@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http/browser_client.dart';
 import '../models/raid_video.dart';
 import '../models/playlist_item.dart';
 import 'package:raid_hub_frontend/services/auth_service.dart'; // Import AuthService
@@ -7,10 +8,11 @@ import 'package:raid_hub_frontend/services/auth_service.dart'; // Import AuthSer
 class ApiService {
   final String baseUrl = "http://localhost:8080/api/videos";
   final AuthService _authService = AuthService(); // Get the AuthService instance
+  final http.Client _client = BrowserClient()..withCredentials = true;
 
   Future<List<RaidVideo>> getVideos() async {
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse(baseUrl),
         headers: _authService.getAuthHeaders(), // Include auth headers
       );
@@ -29,7 +31,7 @@ class ApiService {
 
   Future<RaidVideo> createVideo(RaidVideo video) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse(baseUrl),
         headers: _authService.getAuthHeaders(), // Include auth headers
         body: jsonEncode(video.toJson()),
@@ -51,7 +53,7 @@ class ApiService {
 
   Future<List<PlaylistItem>> getPlaylistItems(String playlistId) async {
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('http://localhost:8080/api/youtube/playlist-items?playlistId=$playlistId&fetchAll=true'),
       );
 

@@ -7,10 +7,14 @@ import 'services/auth_service.dart'; // Import AuthService
 import 'screens/login_screen.dart'; // Import LoginScreen
 import 'screens/video_player_screen.dart'; // Import VideoPlayerScreen
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final authService = AuthService();
+  await authService.initialize();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AuthService(),
+    ChangeNotifierProvider.value(
+      value: authService,
       child: const RaidHubApp(),
     ),
   );

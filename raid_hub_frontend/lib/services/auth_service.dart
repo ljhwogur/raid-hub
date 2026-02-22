@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart'; // Import for ChangeNotifier
 import 'package:http/http.dart' as http;
+import 'package:http/browser_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class AuthService extends ChangeNotifier { // Extend ChangeNotifier
@@ -11,6 +13,10 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
   String? _username;
   String? _role; // To store the user's role if available
   String? _loginErrorMessage; // To store login error message
+  final http.Client _client = BrowserClient()..withCredentials = true;
+
+  static const String _sessionIdKey = 'session_id';
+  static const String _usernameKey = 'username';
 
   final String _baseUrl = 'http://localhost:8080';
 
@@ -19,11 +25,24 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
   bool get isAdmin => _role == 'ADMIN'; // Simple role check
   String? get loginErrorMessage => _loginErrorMessage;
 
+  Future<void> initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? sessionId = prefs.getString(_sessionIdKey);
+    final String? storedUsername = prefs.getString(_usernameKey);
+
+    if (sessionId != null && storedUsername != null) {
+      _sessionCookie = 'JSESSIONID=$sessionId';
+      _username = storedUsername;
+      _role = storedUsername == 'admin' ? 'ADMIN' : 'USER';
+      notifyListeners();
+    }
+  }
+
   Future<bool> checkUsernameAvailability(String username) async {
     final Uri checkUri = Uri.parse('$_baseUrl/api/users/check-username/$username');
 
     try {
-      final response = await http.get(
+      final response = await _client.get(
         checkUri,
         headers: <String, String>{
           'Content-Type': 'application/json',
@@ -48,7 +67,7 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
     final Uri registerUri = Uri.parse('$_baseUrl/api/users/register');
 
     try {
-      final response = await http.post(
+      final response = await _client.post(
         registerUri,
         headers: <String, String>{
           'Content-Type': 'application/json',
@@ -76,7 +95,7 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
     final Uri loginUri = Uri.parse('$_baseUrl/login');
 
     try {
-      final response = await http.post(
+      final response = await _client.post(
         loginUri,
         headers: <String, String>{
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -100,6 +119,7 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
           } else {
             _role = 'USER';
           }
+          await _persistSession(sessionId, username);
           _loginErrorMessage = null;
           print('Login successful. Session ID: $sessionId, Role: $_role');
           notifyListeners(); // Notify listeners of state change
@@ -119,6 +139,7 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
         _sessionCookie = null;
         _username = null;
         _role = null;
+        await _clearSession();
         notifyListeners(); // Notify listeners of state change
         return false;
       }
@@ -128,6 +149,7 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
       _sessionCookie = null;
       _username = null;
       _role = null;
+      await _clearSession();
       notifyListeners(); // Notify listeners of state change
       return false;
     }
@@ -138,20 +160,27 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
     _username = null;
     _role = null;
     print('Logged out.');
+    _clearSession();
     notifyListeners(); // Notify listeners of state change
     // TODO: Optionally send a logout request to the backend if needed
   }
 
   // Helper method to get headers with session cookie for authenticated requests
   Map<String, String> getAuthHeaders() {
-    if (_sessionCookie != null) {
-      return {
-        'Cookie': _sessionCookie!,
-        'Content-Type': 'application/json',
-      };
-    }
     return {
       'Content-Type': 'application/json',
     };
+  }
+
+  Future<void> _persistSession(String sessionId, String username) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sessionIdKey, sessionId);
+    await prefs.setString(_usernameKey, username);
+  }
+
+  Future<void> _clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionIdKey);
+    await prefs.remove(_usernameKey);
   }
 }
