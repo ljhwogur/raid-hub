@@ -112,12 +112,13 @@ class _HomePageState extends State<HomePage> {
     setState(() => _isLoading = true);
     try {
       const List<String> playlistIds = [
-        'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa', 
-        'PLMAYHL7_2pknWRmpGLK6kbsit75Vu4YC0',
-        'PLMAYHL7_2pknNJ_VXH3jd-YtSZq13CBxc',
-        'PLMAYHL7_2pknM3ZUjR68XASaXnOPKy2gB',
-        'PLMAYHL7_2pkkhJVv05QgpN8ZIb5AjzGZf',
-        'PLQMXZuhZUJEBkcXgn9XPb_3xmMXpbXsy1'
+        'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa', // 꿀맹이는 여왕님 로스트아크 공략
+        'PLMAYHL7_2pknWRmpGLK6kbsit75Vu4YC0', // 바보온돌 싱글모드 공략
+        'PLMAYHL7_2pknNJ_VXH3jd-YtSZq13CBxc', // 바보온돌 헬/시련 공략
+        'PLMAYHL7_2pknM3ZUjR68XASaXnOPKy2gB', // 바보온돌 어비스 레이드
+        'PLMAYHL7_2pkkhJVv05QgpN8ZIb5AjzGZf', // 바보온돌 군단장 레이드
+        'PLQMXZuhZUJEBkcXgn9XPb_3xmMXpbXsy1', // 김상드 로스트아크 공략
+        'PLMAYHL7_2pknYPEMC7wcP1WFINEfCS9xX' // 바보온돌 완전공략
       ];
 
       List<Future> futures = [
@@ -172,12 +173,79 @@ class _HomePageState extends State<HomePage> {
         matchesKeyword = true;
       } else if (_selectedGuideKeyword == '기타') {
         final keywords = _guideKeywords.where((k) => k != '전체' && k != '기타').toList();
-        bool isKnown = keywords.any((k) => title.contains(k) || raidName == k || (_keywordMapping[k] != null && title.contains(_keywordMapping[k]!)));
+        bool isKnown = keywords.any((k) => 
+            title.contains(k) || 
+            raidName == k || 
+            (_keywordMapping[k] != null && title.contains(_keywordMapping[k]!)));
         matchesKeyword = !isKnown;
       } else {
-        final term = _keywordMapping[_selectedGuideKeyword] ?? _selectedGuideKeyword;
-        matchesKeyword = title.contains(term) || raidName.contains(term);
-        if (matchesKeyword) matchesKeyword = _isValidGuideItem(item);
+        DateTime? videoDate;
+        if (item is PlaylistItem) {
+          videoDate = DateTime.tryParse(item.publishedAt);
+        } else if (item is RaidVideo) {
+          videoDate = item.createdAt;
+        }
+
+        final actKeywords = ['서막', '1막', '2막', '3막', '4막', '종막'];
+        
+        List<String> itemActs = [];
+        for (String act in actKeywords) {
+          String mappedRaid = _keywordMapping[act]!;
+          if (title.contains(act) || title.contains(mappedRaid) || raidName.contains(act) || raidName.contains(mappedRaid)) {
+             itemActs.add(act);
+          }
+        }
+
+        // '종막' 오분류 방지 ('카제로스'가 그룹명으로 쓰인 경우 필터링)
+        // 다른 막이 같이 잡혔는데 명시적인 '종막' 단어가 없다면, 종막에서 제외 (남은 다른 막으로 정상 분류됨)
+        if (itemActs.contains('종막') && itemActs.length > 1) {
+          if (!title.contains('종막') && !raidName.contains('종막')) {
+            itemActs.remove('종막');
+          }
+        }
+
+        // 아브렐슈드 2막 날짜 판별 (2024년 9월 25일)
+        bool isAfter2MakDate = videoDate != null && !videoDate.isBefore(DateTime(2024, 9, 25));
+        if (title.contains('아브렐슈드') || raidName.contains('아브렐슈드') || title.contains('2막') || raidName.contains('2막')) {
+          if (isAfter2MakDate) {
+            if (!itemActs.contains('2막')) itemActs.add('2막');
+          } else {
+            itemActs.remove('2막');
+          }
+        }
+
+        // 서막/4막 날짜 판별 (2025년 8월 20일)
+        bool isAfter4MakDate = videoDate != null && !videoDate.isBefore(DateTime(2025, 8, 20));
+        if (title.contains('서막') || title.contains('에키드나') || raidName.contains('서막') || raidName.contains('에키드나') ||
+            title.contains('4막') || title.contains('아르모체') || raidName.contains('4막') || raidName.contains('아르모체')) {
+          if (isAfter4MakDate) {
+            itemActs.remove('서막');
+            if (!itemActs.contains('4막')) itemActs.add('4막');
+          } else {
+            itemActs.remove('4막');
+            if (!itemActs.contains('서막')) itemActs.add('서막');
+          }
+        }
+
+        String? primaryAct;
+        for (String act in actKeywords.reversed) {
+          if (itemActs.contains(act)) {
+            primaryAct = act;
+            break;
+          }
+        }
+
+        if (_keywordMapping.containsKey(_selectedGuideKeyword)) {
+          matchesKeyword = (primaryAct == _selectedGuideKeyword);
+        } else {
+          matchesKeyword = title.contains(_selectedGuideKeyword) || raidName.contains(_selectedGuideKeyword);
+          
+          if (_selectedGuideKeyword == '아브렐슈드' && isAfter2MakDate) {
+             matchesKeyword = false;
+          } else if (matchesKeyword && primaryAct != null) {
+             matchesKeyword = false;
+          }
+        }
       }
 
       // 검색어 필터 적용
