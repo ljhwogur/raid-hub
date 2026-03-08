@@ -132,7 +132,11 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
     // 플러터 웹의 모든 출처 허용 (Credentials 포함 시 AllowedOriginPatterns 사용 필수)
-    config.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*"));
+    config.setAllowedOriginPatterns(Arrays.asList(
+        "http://localhost:*", 
+        "http://127.0.0.1:*",
+        "http://20.89.237.161*"
+    ));
     config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(Arrays.asList("*"));
     config.setExposedHeaders(Arrays.asList("Set-Cookie"));
