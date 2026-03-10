@@ -1,10 +1,240 @@
-flutter_bootstrap.js:31 Exception while loading service worker: Error: Service Worker API unavailable.
-The current context is NOT secure.
-Read more: https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts
-    at g.loadServiceWorker (flutter_bootstrap.js:3:99)
-    at S.load (flutter_bootstrap.js:31:1133)
-    at flutter_bootstrap.js:40:17
-(anonymous) @ flutter_bootstrap.js:31
-main.dart.js:26971 Starting fresh: Always logged out on entry.
-main.dart.js:29884 Could not find a set of Noto fonts to display all missing characters. Please add a font asset for the missing characters. See: https://flutter.dev/docs/cookbook/design/fonts
-$1 @ main.dart.js:29884
+PS C:\GitHub\raid-hub\raid_hub_frontend> flutter build web --release
+Target dart2js failed: ProcessException: Process exited abnormally with exit code 1:
+lib/main.dart:354:26:
+Error: The getter '_showBlockedVideosDialog' isn't defined for the class '_HomePageState'.
+ - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              onPressed: _showBlockedVideosDialog,
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:371:17:
+Error: The method '_buildSearchAndSortBar' isn't defined for the class '_HomePageState'.
+ - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                _buildSearchAndSortBar(),
+                ^^^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:372:17:
+Error: The method '_buildGuideKeywordFilters' isn't defined for the class '_HomePageState'.
+ - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                _buildGuideKeywordFilters(),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:378:47:
+Error: The method '_buildVideosGrid' isn't defined for the class '_HomePageState'.
+ - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                      : (_currentIndex == 0 ? _buildVideosGrid() : _buildCheatSheetsGrid()),
+                                              ^^^^^^^^^^^^^^^^
+lib/main.dart:378:68:
+Error: The method '_buildCheatSheetsGrid' isn't defined for the class '_HomePageState'.
+ - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                      : (_currentIndex == 0 ? _buildVideosGrid() : _buildCheatSheetsGrid()),
+                                                                   ^^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:392:47:
+Error: The getter '_showAddVideoDialog' isn't defined for the class '_HomePageState'.
+ - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              onPressed: _currentIndex == 0 ? _showAddVideoDialog : _showAddCheatSheetDialog,
+                                              ^^^^^^^^^^^^^^^^^^^
+lib/main.dart:392:69:
+Error: The getter '_showAddCheatSheetDialog' isn't defined for the class '_HomePageState'.
+ - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              onPressed: _currentIndex == 0 ? _showAddVideoDialog : _showAddCheatSheetDialog,
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:503:27:
+Error: The getter '_searchController' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              controller: _searchController,
+                          ^^^^^^^^^^^^^^^^^
+lib/main.dart:515:20:
+Error: The getter '_sortOption' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            value: _sortOption,
+                   ^^^^^^^^^^^
+lib/main.dart:522:47:
+Error: The setter '_sortOption' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              if (val != null) setState(() => _sortOption = val);
+                                              ^^^^^^^^^^^
+lib/main.dart:536:19:
+Error: The getter '_guideKeywords' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+        children: _guideKeywords.map((keyword) {
+                  ^^^^^^^^^^^^^^
+lib/main.dart:539:23:
+Error: The getter '_selectedGuideKeyword' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            selected: _selectedGuideKeyword == keyword,
+                      ^^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:541:44:
+Error: The setter '_selectedGuideKeyword' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              if (selected) setState(() => _selectedGuideKeyword = keyword);
+                                           ^^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:550:12:
+Error: The getter '_filteredContent' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+    return _filteredContent.isEmpty && !_isLoading
+           ^^^^^^^^^^^^^^^^
+lib/main.dart:550:41:
+Error: The getter '_isLoading' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+    return _filteredContent.isEmpty && !_isLoading
+                                        ^^^^^^^^^^
+lib/main.dart:560:24:
+Error: The getter '_filteredContent' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            itemCount: _filteredContent.length,
+                       ^^^^^^^^^^^^^^^^
+lib/main.dart:562:28:
+Error: The getter '_filteredContent' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              final item = _filteredContent[index];
+                           ^^^^^^^^^^^^^^^^
+lib/main.dart:569:12:
+Error: The getter '_filteredCheatSheets' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+    return _filteredCheatSheets.isEmpty && !_isLoading
+           ^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:569:45:
+Error: The getter '_isLoading' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+    return _filteredCheatSheets.isEmpty && !_isLoading
+                                            ^^^^^^^^^^
+lib/main.dart:579:24:
+Error: The getter '_filteredCheatSheets' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            itemCount: _filteredCheatSheets.length,
+                       ^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:580:67:
+Error: The getter '_filteredCheatSheets' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            itemBuilder: (context, index) => _buildCheatSheetCard(_filteredCheatSheets[index]),
+                                                                  ^^^^^^^^^^^^^^^^^^^^
+lib/main.dart:669:25:
+Error: The getter '_raidByCategory' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+        raidByCategory: _raidByCategory,
+                        ^^^^^^^^^^^^^^^
+lib/main.dart:672:19:
+Error: The getter '_apiService' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            await _apiService.uploadCheatSheet(
+                  ^^^^^^^^^^^
+lib/main.dart:681:13:
+Error: The method '_refreshVideos' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            _refreshVideos();
+            ^^^^^^^^^^^^^^
+lib/main.dart:702:21:
+Error: The getter '_apiService' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              await _apiService.deleteCheatSheet(cs.id!);
+                    ^^^^^^^^^^^
+lib/main.dart:703:15:
+Error: The method '_refreshVideos' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+              _refreshVideos();
+              ^^^^^^^^^^^^^^
+lib/main.dart:811:39:
+Error: The getter '_apiService' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                                await _apiService.deleteVideo(video.id!);
+                                      ^^^^^^^^^^^
+lib/main.dart:812:33:
+Error: The method '_refreshVideos' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                                _refreshVideos(); // 紐⑸줉 ?덈줈怨좎묠
+                                ^^^^^^^^^^^^^^
+lib/main.dart:931:39:
+Error: The getter '_apiService' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                                await _apiService.blockVideo(item.videoId, "愿由ъ옄 ?④? 泥섎━");
+                                      ^^^^^^^^^^^
+lib/main.dart:934:35:
+Error: The method '_refreshVideos' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                                  _refreshVideos(); // 紐⑸줉 ?덈줈怨좎묠
+                                  ^^^^^^^^^^^^^^
+lib/main.dart:990:18:
+Error: The getter '_blockedContent' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+          child: _blockedContent.isEmpty
+                 ^^^^^^^^^^^^^^^
+lib/main.dart:994:30:
+Error: The getter '_blockedContent' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                  itemCount: _blockedContent.length,
+                             ^^^^^^^^^^^^^^^
+lib/main.dart:996:34:
+Error: The getter '_blockedContent' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                    final item = _blockedContent[index] as PlaylistItem;
+                                 ^^^^^^^^^^^^^^^
+lib/main.dart:1011:37:
+Error: The getter '_apiService' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                              await _apiService.unblockVideo(item.videoId);
+                                    ^^^^^^^^^^^
+lib/main.dart:1014:33:
+Error: The method '_refreshVideos' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+                                _refreshVideos(); // ?꾩껜 紐⑸줉 ?덈줈怨좎묠
+                                ^^^^^^^^^^^^^^
+lib/main.dart:1043:25:
+Error: The getter '_raidByCategory' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+        raidByCategory: _raidByCategory,
+                        ^^^^^^^^^^^^^^^
+lib/main.dart:1046:19:
+Error: The getter '_apiService' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            await _apiService.createVideo(video);
+                  ^^^^^^^^^^^
+lib/main.dart:1048:13:
+Error: The method '_refreshVideos' isn't defined for the class '_ShimmerEffectState'.
+ - '_ShimmerEffectState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
+            _refreshVideos();
+            ^^^^^^^^^^^^^^
+Error: Compilation failed.
+  Command: C:\flutter\bin\cache\dart-sdk\bin\dart.exe compile js --platform-binaries=C:\flutter\bin\cache\flutter_web_sdk\kernel --invoker=flutter_tool -Ddart.vm.product=true -DFLUTTER_VERSION=3.32.8 -DFLUTTER_CHANNEL=stable    
+  -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=edada7c56e -DFLUTTER_ENGINE_REVISION=ef0cd00091 -DFLUTTER_DART_VERSION=3.8.1 -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false     
+  -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/ef0cd000916d64fa0c5d09cc809fa7ad244a5767/ --native-null-assertions --no-source-maps -o
+  C:\GitHub\raid-hub\raid_hub_frontend\.dart_tool\flutter_build\f7a4e328987d5746f6c2ce963f21d24d\app.dill --packages=C:\GitHub\raid-hub\raid_hub_frontend\.dart_tool\package_config.json --cfe-only
+  C:\GitHub\raid-hub\raid_hub_frontend\.dart_tool\flutter_build\f7a4e328987d5746f6c2ce963f21d24d\main.dart
+#0      RunResult.throwException (package:flutter_tools/src/base/process.dart:118:5)
+#1      _DefaultProcessUtils.run (package:flutter_tools/src/base/process.dart:344:19)
+<asynchronous suspension>
+#2      Dart2JSTarget.build (package:flutter_tools/src/build_system/targets/web.dart:201:5)
+<asynchronous suspension>
+#3      _BuildInstance._invokeInternal (package:flutter_tools/src/build_system/build_system.dart:873:9)
+<asynchronous suspension>
+#4      Future.wait.<anonymous closure> (dart:async/future.dart:525:21)
+<asynchronous suspension>
+#5      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:811:32)
+<asynchronous suspension>
+#6      Future.wait.<anonymous closure> (dart:async/future.dart:525:21)
+<asynchronous suspension>
+#7      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:811:32)
+<asynchronous suspension>
+#8      FlutterBuildSystem.build (package:flutter_tools/src/build_system/build_system.dart:629:16)
+<asynchronous suspension>
+#9      WebBuilder.buildWeb (package:flutter_tools/src/web/compile.dart:91:34)
+<asynchronous suspension>
+#10     BuildWebCommand.runCommand (package:flutter_tools/src/commands/build_web.dart:246:5)
+<asynchronous suspension>
+#11     FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1563:27)
+<asynchronous suspension>
+#12     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#13     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+<asynchronous suspension>
+#14     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:494:9)
+<asynchronous suspension>
+#15     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#16     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:431:5)
+<asynchronous suspension>
+#17     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:98:11)
+<asynchronous suspension>
+#18     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#19     main (package:flutter_tools/executable.dart:102:3)
+<asynchronous suspension>
+
+Compiling lib\main.dart for the Web...                             16.0s
+Error: Failed to compile application for the Web.

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Import Provider
-import 'package:flutter/foundation.dart'; // Import kIsWeb
-import 'package:file_picker/file_picker.dart'; // Import FilePicker
+import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
 import 'models/raid_video.dart';
 import 'models/playlist_item.dart';
-import 'models/cheat_sheet.dart'; // Import CheatSheet model
+import 'models/cheat_sheet.dart';
 import 'services/api_service.dart';
-import 'services/auth_service.dart'; // Import AuthService
-import 'screens/login_screen.dart'; // Import LoginScreen
-import 'screens/video_player_screen.dart'; // Import VideoPlayerScreen
+import 'services/auth_service.dart';
+import 'screens/login_screen.dart';
+import 'widgets/skeleton_ui.dart';
+import 'widgets/cheat_sheet_card.dart';
+import 'widgets/video_cards.dart';
+import 'widgets/upload_dialogs.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -114,7 +116,6 @@ class _HomePageState extends State<HomePage> {
     try {
       const List<String> playlistIds = [
         'PLfeapZwXytc5hLWufxWTGOZsF9Hx_IsVa', // 꿀맹이는 여왕님 로스트아크 공략
-//         'PLfeapZwXytc5DFYMsAnyvRKes3Z-WU0CM', // 꿀맹이는 여왕님 로스트아크 싱글 모드 공략
         'PLMAYHL7_2pknWRmpGLK6kbsit75Vu4YC0', // 바보온돌 싱글모드 공략
         'PLMAYHL7_2pknNJ_VXH3jd-YtSZq13CBxc', // 바보온돌 헬/시련 공략
         'PLMAYHL7_2pknM3ZUjR68XASaXnOPKy2gB', // 바보온돌 어비스 레이드
@@ -162,7 +163,6 @@ class _HomePageState extends State<HomePage> {
         });
       }
     } catch (e) {
-      print("데이터 로딩 중 에러 발생: $e");
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -172,16 +172,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _applyFilters() {
-    // 1. 영상 필터링 & 검색
     List<dynamic> filteredVideos = _allContent.where((item) {
       String title = (item is RaidVideo) ? item.title : (item as PlaylistItem).title;
       String uploader = (item is RaidVideo) ? item.uploaderName : (item as PlaylistItem).channelTitle;
       String raidName = (item is RaidVideo) ? item.raidName : '';
 
-      // 키워드 필터 적용
       bool matchesKeyword = false;
-
-      // 특정 플레이리스트 (기타 분류) 처리
       bool isEtcPlaylist = (item is PlaylistItem && item.playlistId == 'PLSC2n1C_PEtut5Q3C0NTDBkiclH2Xqctm');
 
       if (_selectedGuideKeyword == '전체') {
@@ -198,7 +194,6 @@ class _HomePageState extends State<HomePage> {
           matchesKeyword = !isKnown;
         }
       } else if (isEtcPlaylist) {
-        // 기타 플레이리스트는 '전체' 또는 '기타' 외의 카테고리에는 표시 안 함
         matchesKeyword = false;
       } else {
         DateTime? videoDate;
@@ -209,7 +204,6 @@ class _HomePageState extends State<HomePage> {
         }
 
         final actKeywords = ['서막', '1막', '2막', '3막', '4막', '종막'];
-        
         List<String> itemActs = [];
         for (String act in actKeywords) {
           String mappedRaid = _keywordMapping[act]!;
@@ -218,15 +212,12 @@ class _HomePageState extends State<HomePage> {
           }
         }
 
-        // '종막' 오분류 방지 ('카제로스'가 그룹명으로 쓰인 경우 필터링)
-        // 다른 막이 같이 잡혔는데 명시적인 '종막' 단어가 없다면, 종막에서 제외 (남은 다른 막으로 정상 분류됨)
         if (itemActs.contains('종막') && itemActs.length > 1) {
           if (!title.contains('종막') && !raidName.contains('종막')) {
             itemActs.remove('종막');
           }
         }
 
-        // 아브렐슈드 2막 날짜 판별 (2024년 9월 25일)
         bool isAfter2MakDate = videoDate != null && !videoDate.isBefore(DateTime(2024, 9, 25));
         if (title.contains('아브렐슈드') || raidName.contains('아브렐슈드') || title.contains('2막') || raidName.contains('2막')) {
           if (isAfter2MakDate) {
@@ -236,7 +227,6 @@ class _HomePageState extends State<HomePage> {
           }
         }
 
-        // 서막/4막 날짜 판별 (2025년 8월 20일)
         bool isAfter4MakDate = videoDate != null && !videoDate.isBefore(DateTime(2025, 8, 20));
         if (title.contains('서막') || title.contains('에키드나') || raidName.contains('서막') || raidName.contains('에키드나') ||
             title.contains('4막') || title.contains('아르모체') || raidName.contains('4막') || raidName.contains('아르모체')) {
@@ -261,7 +251,6 @@ class _HomePageState extends State<HomePage> {
           matchesKeyword = (primaryAct == _selectedGuideKeyword);
         } else {
           matchesKeyword = title.contains(_selectedGuideKeyword) || raidName.contains(_selectedGuideKeyword);
-          
           if (_selectedGuideKeyword == '아브렐슈드' && isAfter2MakDate) {
              matchesKeyword = false;
           } else if (matchesKeyword && primaryAct != null) {
@@ -270,7 +259,6 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
-      // 검색어 필터 적용
       bool matchesSearch = _searchQuery.isEmpty || 
           title.toLowerCase().contains(_searchQuery.toLowerCase()) || 
           uploader.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -279,7 +267,6 @@ class _HomePageState extends State<HomePage> {
       return matchesKeyword && matchesSearch;
     }).toList();
 
-    // 영상 정렬
     if (_sortOption == '최신순') {
         filteredVideos.sort((a, b) {
             DateTime dateA = (a is RaidVideo) ? (a.createdAt ?? DateTime(2000)) : DateTime.tryParse((a as PlaylistItem).publishedAt) ?? DateTime(2000);
@@ -295,7 +282,6 @@ class _HomePageState extends State<HomePage> {
     }
     _filteredContent = filteredVideos;
 
-    // 2. 컨닝 페이퍼 필터링 & 검색
     List<CheatSheet> filteredCS = _allCheatSheets.where((cs) {
       bool matchesKeyword = false;
       if (_selectedGuideKeyword == '전체') {
@@ -304,10 +290,8 @@ class _HomePageState extends State<HomePage> {
         final keywords = _guideKeywords.where((k) => k != '전체' && k != '기타').toList();
         matchesKeyword = !keywords.any((k) => cs.raidName.contains(k) || cs.title.contains(k));
       } else if (_selectedGuideKeyword == '2막') {
-        // '2막'의 경우, 단순 '아브렐슈드'가 아닌 '2막' 키워드가 명시적으로 있어야 함
         matchesKeyword = cs.raidName.contains('2막') || cs.title.contains('2막') || cs.gate.contains('2막');
       } else if (_selectedGuideKeyword == '아브렐슈드') {
-        // '아브렐슈드' 탭에서는 '2막'이 포함된 것을 제외 (기존 군단장 아브렐슈드만)
         matchesKeyword = (cs.raidName.contains('아브렐슈드') || cs.title.contains('아브렐슈드')) &&
             !(cs.raidName.contains('2막') || cs.title.contains('2막') || cs.gate.contains('2막'));
       } else {
@@ -322,7 +306,6 @@ class _HomePageState extends State<HomePage> {
       return matchesKeyword && matchesSearch;
     }).toList();
 
-    // 컨닝 페이퍼 정렬
     if (_sortOption == '최신순') {
         filteredCS.sort((a, b) => (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000)));
     } else {
@@ -331,16 +314,9 @@ class _HomePageState extends State<HomePage> {
     _filteredCheatSheets = filteredCS;
   }
 
-  bool _isValidGuideItem(dynamic item) {
-    if (_selectedGuideKeyword != '2막') return true;
-    if (item is RaidVideo) return true; 
-    final publishedAt = DateTime.tryParse((item as PlaylistItem).publishedAt);
-    return publishedAt != null && publishedAt.year >= 2024;
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!_isLoading) _applyFilters();
+    if (!_isLoading && _allContent.isNotEmpty) _applyFilters();
     final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
@@ -366,14 +342,16 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      body: Column(
               children: [
-                _buildSearchAndSortBar(), // 검색 및 정렬 바
+                _buildSearchAndSortBar(),
                 _buildGuideKeywordFilters(),
                 Expanded(
-                  child: _currentIndex == 0 ? _buildVideosGrid() : _buildCheatSheetsGrid(),
+                  child: _isLoading 
+                    ? _buildSkeletonGrid() 
+                    : (_allContent.isEmpty && !_isLoading)
+                      ? _buildErrorView()
+                      : (_currentIndex == 0 ? _buildVideosGrid() : _buildCheatSheetsGrid()),
                 ),
               ],
             ),
@@ -391,6 +369,39 @@ class _HomePageState extends State<HomePage> {
               child: const Icon(Icons.add),
             )
           : null,
+    );
+  }
+
+  Widget _buildSkeletonGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(20),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: _currentIndex == 0 ? 300 : 400,
+        childAspectRatio: _currentIndex == 0 ? 0.8 : 1.2,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
+      ),
+      itemCount: 8,
+      itemBuilder: (context, index) => const SkeletonCard(),
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 60, color: Colors.redAccent),
+          const SizedBox(height: 16),
+          const Text("데이터를 불러오지 못했습니다.", style: TextStyle(fontSize: 18)),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: _loadData,
+            icon: const Icon(Icons.refresh),
+            label: const Text("다시 시도"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -448,116 +459,106 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildVideosGrid() {
-    return _filteredContent.isEmpty
+    return _filteredContent.isEmpty && !_isLoading
         ? const Center(child: Text("해당 키워드의 공략 영상이 없습니다."))
         : GridView.builder(
             padding: const EdgeInsets.all(20),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 300, childAspectRatio: 0.8, crossAxisSpacing: 20, mainAxisSpacing: 20,
+              maxCrossAxisExtent: 350, 
+              childAspectRatio: 0.85, 
+              crossAxisSpacing: 20, 
+              mainAxisSpacing: 20,
             ),
             itemCount: _filteredContent.length,
             itemBuilder: (context, index) {
               final item = _filteredContent[index];
-              return (item is RaidVideo) ? _buildVideoCard(item) : _buildPlaylistCard(item as PlaylistItem);
+              if (item is RaidVideo) {
+                return VideoCard(
+                  video: item, 
+                  thumbnailUrl: _getYouTubeThumbnail(item.youtubeUrl),
+                  onDelete: () => _showDeleteVideoConfirm(item),
+                );
+              } else {
+                return PlaylistCard(
+                  item: item as PlaylistItem,
+                  onBlock: () => _showBlockVideoConfirm(item),
+                );
+              }
             },
           );
   }
 
   Widget _buildCheatSheetsGrid() {
-    return _filteredCheatSheets.isEmpty
+    return _filteredCheatSheets.isEmpty && !_isLoading
         ? const Center(child: Text("해당 키워드의 컨닝 페이퍼가 없습니다."))
         : GridView.builder(
             padding: const EdgeInsets.all(20),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 400, childAspectRatio: 1.2, crossAxisSpacing: 20, mainAxisSpacing: 20,
+              maxCrossAxisExtent: 450, 
+              childAspectRatio: 1.1, 
+              crossAxisSpacing: 20, 
+              mainAxisSpacing: 20,
             ),
             itemCount: _filteredCheatSheets.length,
-            itemBuilder: (context, index) => _buildCheatSheetCard(_filteredCheatSheets[index]),
+            itemBuilder: (context, index) => CheatSheetCard(
+              cheatSheet: _filteredCheatSheets[index],
+              onDelete: () => _confirmDeleteCheatSheet(_filteredCheatSheets[index]),
+            ),
           );
   }
 
-  Widget _buildCheatSheetCard(CheatSheet cs) {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          InkWell(
-            onTap: () => _showFullImage(cs),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: Image.network(cs.fullImageUrl, fit: BoxFit.cover,
-                      errorBuilder: (ctx, _, __) => const Center(child: Icon(Icons.broken_image, size: 50))),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(cs.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text("${cs.raidName} | ${cs.gate}", style: const TextStyle(fontSize: 13, color: Colors.blueGrey)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+  void _showDeleteVideoConfirm(RaidVideo video) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("영상 삭제"),
+        content: const Text("정말로 이 영상을 삭제하시겠습니까?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("취소")),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _apiService.deleteVideo(video.id!);
+                _refreshVideos();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("삭제 실패: $e")));
+              }
+            },
+            child: const Text("삭제", style: TextStyle(color: Colors.red)),
           ),
-          if (authService.isAdmin)
-            Positioned(
-              top: 8, right: 8,
-              child: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.redAccent),
-                onPressed: () => _confirmDeleteCheatSheet(cs),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  void _showFullImage(CheatSheet cs) {
+  void _showBlockVideoConfirm(PlaylistItem item) {
     showDialog(
       context: context,
-      builder: (context) => Dialog.fullscreen(
-        backgroundColor: Colors.black,
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Stack(
-                  children: [
-                    Center(child: InteractiveViewer(child: Image.network(cs.fullImageUrl))),
-                    Positioned(
-                      top: 10, left: 10,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 30), 
-                        onPressed: () => Navigator.pop(context)
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                color: Colors.black87,
-                child: Text(
-                  '출처: ${cs.uploaderName}',
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text("영상 숨기기"),
+        content: const Text("이 영상을 목록에서 숨기시겠습니까?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("취소")),
+          TextButton(
+            onPressed: () async {
+              try {
+                await _apiService.blockVideo(item.videoId, "관리자 숨김 처리");
+                Navigator.pop(ctx);
+                _refreshVideos();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("숨김 실패: $e")));
+              }
+            },
+            child: const Text("숨기기", style: TextStyle(color: Colors.orange)),
           ),
-        ),
+        ],
       ),
     );
   }
 
   void _showAddCheatSheetDialog() {
-    final authService = Provider.of<AuthService>(context, listen: false); // Get authService
+    final authService = Provider.of<AuthService>(context, listen: false);
     showDialog(
       context: context,
       builder: (context) => CheatSheetUploadDialog(
@@ -568,7 +569,7 @@ class _HomePageState extends State<HomePage> {
               title: title, 
               raidName: raid, 
               gate: gate, 
-              uploaderName: uploaderName.isNotEmpty ? uploaderName : (authService.username ?? 'admin'), // 입력받은 값 우선, 없으면 로그인 유저명
+              uploaderName: uploaderName.isNotEmpty ? uploaderName : (authService.username ?? 'admin'),
               fileBytes: bytes, 
               fileName: name
             );
@@ -605,274 +606,23 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 영상 카드 위젯 (DB 데이터)
-  Widget _buildVideoCard(RaidVideo video) {
-    String? thumbnailUrl = _getYouTubeThumbnail(video.youtubeUrl);
-    final authService = Provider.of<AuthService>(context, listen: false);
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 4, // 수동 추가 영상 강조
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Stack(
-        children: [
-          InkWell(
-            onTap: () {
-              final videoId = _getYouTubeVideoId(video.youtubeUrl);
-              if (videoId != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => VideoPlayerScreen(videoId: videoId),
-                  ),
-                );
-              }
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: thumbnailUrl != null
-                      ? Image.network(thumbnailUrl, fit: BoxFit.cover,
-                          errorBuilder: (ctx, _, __) => Container(
-                              color: Colors.grey,
-                              child: const Icon(Icons.broken_image)))
-                      : Container(
-                          color: Colors.black12,
-                          child: const Icon(Icons.videocam, size: 50)),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          video.title,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "[관리자 등록] ${video.raidName} - ${video.difficulty}",
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          "${video.gate} | ${video.uploaderName}",
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (authService.isAdmin)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text("영상 삭제"),
-                        content: const Text("정말로 이 영상을 삭제하시겠습니까?"),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text("취소"),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              Navigator.pop(ctx); // 다이얼로그 닫기
-                              try {
-                                await _apiService.deleteVideo(video.id!);
-                                _refreshVideos(); // 목록 새로고침
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("영상이 삭제되었습니다.")),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("삭제 실패: $e")),
-                                  );
-                                }
-                              }
-                            },
-                            child: const Text("삭제", style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-        ],
+  void _showAddVideoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => VideoUploadDialog(
+        raidByCategory: _raidByCategory,
+        onUpload: (video) async {
+          try {
+            await _apiService.createVideo(video);
+            Navigator.pop(context);
+            _refreshVideos();
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('영상이 성공적으로 등록되었습니다!')));
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
+          }
+        },
       ),
     );
-  }
-
-  // 플레이리스트 카드 위젯 (유튜브 API 데이터)
-  Widget _buildPlaylistCard(PlaylistItem item) {
-    final authService = Provider.of<AuthService>(context, listen: false);
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => VideoPlayerScreen(videoId: item.videoId),
-                ),
-              );
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: item.thumbnailUrl.isNotEmpty
-                      ? Image.network(item.thumbnailUrl, fit: BoxFit.cover,
-                          errorBuilder: (ctx, _, __) => Container(
-                              color: Colors.grey,
-                              child: const Icon(Icons.broken_image)))
-                      : Container(
-                          color: Colors.black12,
-                          child: const Icon(Icons.videocam, size: 50)),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          item.channelTitle,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).colorScheme.secondary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.publishedAt,
-                          style: const TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (authService.isAdmin)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.black54,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.visibility_off, color: Colors.orangeAccent, size: 20),
-                  tooltip: '이 영상 숨기기',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text("영상 숨기기"),
-                        content: const Text("이 영상을 목록에서 숨기시겠습니까?\n(새로고침 후 적용됩니다)"),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text("취소"),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              try {
-                                await _apiService.blockVideo(item.videoId, "관리자 숨김 처리");
-                                if (mounted) {
-                                  Navigator.pop(ctx); // 성공 후에 팝업 닫기
-                                  _refreshVideos(); // 목록 새로고침
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("영상이 숨김 처리되었습니다.")),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("숨김 실패: $e")),
-                                  );
-                                }
-                              }
-                            },
-                            child: const Text("숨기기", style: TextStyle(color: Colors.orange)),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  String? _getYouTubeVideoId(String url) {
-    try {
-      Uri uri = Uri.parse(url);
-      if (uri.host.contains("youtu.be")) {
-        return uri.pathSegments.first;
-      } else if (uri.host.contains("youtube.com")) {
-        return uri.queryParameters['v'];
-      }
-    } catch (e) {
-      // Handle parsing error
-    }
-    return null;
-  }
-
-  String? _getYouTubeThumbnail(String url) {
-    final videoId = _getYouTubeVideoId(url);
-    if (videoId != null) {
-      return "https://img.youtube.com/vi/$videoId/mqdefault.jpg";
-    }
-    return null;
   }
 
   void _showBlockedVideosDialog() {
@@ -890,298 +640,41 @@ class _HomePageState extends State<HomePage> {
                   itemBuilder: (context, index) {
                     final item = _blockedContent[index] as PlaylistItem;
                     return ListTile(
-                      leading: Image.network(
-                        item.thumbnailUrl,
-                        width: 100,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, _, __) => const Icon(Icons.broken_image),
-                      ),
+                      leading: Image.network(item.thumbnailUrl, width: 100, fit: BoxFit.cover, errorBuilder: (ctx, _, __) => const Icon(Icons.broken_image)),
                       title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
                       subtitle: Text(item.channelTitle),
                       trailing: IconButton(
                         icon: const Icon(Icons.restore, color: Colors.green),
-                        tooltip: '영상 복구',
-                          onPressed: () async {
-                            try {
-                              await _apiService.unblockVideo(item.videoId);
-                              if (mounted) {
-                                Navigator.pop(context); // API 성공 후에 팝업 닫기
-                                _refreshVideos(); // 전체 목록 새로고침
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("영상이 복구되었습니다.")),
-                                );
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text("복구 실패: $e")),
-                                );
-                              }
-                            }
-                          },
+                        onPressed: () async {
+                          try {
+                            await _apiService.unblockVideo(item.videoId);
+                            Navigator.pop(context);
+                            _refreshVideos();
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("복구 실패: $e")));
+                          }
+                        },
                       ),
                     );
                   },
                 ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('닫기')),
-        ],
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('닫기'))],
       ),
     );
   }
 
-  void _showAddVideoDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => VideoUploadDialog(
-        raidByCategory: _raidByCategory,
-        onUpload: (video) async {
-          try {
-            await _apiService.createVideo(video);
-            Navigator.pop(context);
-            _refreshVideos();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('영상이 성공적으로 등록되었습니다!')),
-            );
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('등록 실패: $e')),
-            );
-          }
-        },
-      ),
-    );
-  }
-}
-
-class VideoUploadDialog extends StatefulWidget {
-  final Map<String, List<String>> raidByCategory;
-  final Function(RaidVideo) onUpload;
-
-  const VideoUploadDialog({
-    super.key,
-    required this.raidByCategory,
-    required this.onUpload,
-  });
-
-  @override
-  State<VideoUploadDialog> createState() => _VideoUploadDialogState();
-}
-
-class _VideoUploadDialogState extends State<VideoUploadDialog> {
-  final _formKey = GlobalKey<FormState>();
-
-  late String _selectedCategory;
-  String? _selectedRaidName;
-
-  final _titleController = TextEditingController();
-  final _urlController = TextEditingController();
-  final _uploaderController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedCategory = widget.raidByCategory.keys.first;
-    _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
+  String? _getYouTubeVideoId(String url) {
+    try {
+      Uri uri = Uri.parse(url);
+      if (uri.host.contains("youtu.be")) return uri.pathSegments.first;
+      if (uri.host.contains("youtube.com")) return uri.queryParameters['v'];
+    } catch (e) {}
+    return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('공략 영상 등록'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 카테고리 선택 - 내부 분류용
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(labelText: '레이드 분류'),
-                items: widget.raidByCategory.keys.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _selectedCategory = val!;
-                    _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
-                  });
-                },
-              ),
-              DropdownButtonFormField<String>(
-                value: _selectedRaidName,
-                decoration: const InputDecoration(labelText: '레이드 이름'),
-                items: widget.raidByCategory[_selectedCategory]?.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _selectedRaidName = val;
-                  });
-                },
-              ),
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: '영상 제목'),
-                validator: (val) => val!.isEmpty ? '제목을 입력하세요' : null,
-              ),
-              TextFormField(
-                controller: _urlController,
-                decoration: const InputDecoration(labelText: '유튜브 URL'),
-                validator: (val) => val!.isEmpty ? 'URL을 입력하세요' : null,
-              ),
-              TextFormField(
-                controller: _uploaderController,
-                decoration: const InputDecoration(labelText: '스트리머/유튜버 이름'),
-                validator: (val) => val!.isEmpty ? '이름을 입력하세요' : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final video = RaidVideo(
-                title: _titleController.text,
-                youtubeUrl: _urlController.text,
-                uploaderName: _uploaderController.text,
-                raidName: _selectedRaidName!,
-                difficulty: '공략', // 기본값 설정
-                gate: '전체',       // 기본값 설정
-              );
-              widget.onUpload(video);
-            }
-          },
-          child: const Text('등록'),
-        ),
-      ],
-    );
-  }
-}
-
-class CheatSheetUploadDialog extends StatefulWidget {
-  final Map<String, List<String>> raidByCategory;
-  final Function(String, String, String, String, List<int>, String) onUpload;
-
-  const CheatSheetUploadDialog({
-    super.key,
-    required this.raidByCategory,
-    required this.onUpload,
-  });
-
-  @override
-  State<CheatSheetUploadDialog> createState() => _CheatSheetUploadDialogState();
-}
-
-class _CheatSheetUploadDialogState extends State<CheatSheetUploadDialog> {
-  final _formKey = GlobalKey<FormState>();
-
-  late String _selectedCategory;
-  String? _selectedRaidName;
-  final _titleController = TextEditingController();
-  final _gateController = TextEditingController(text: '전체');
-  final _uploaderController = TextEditingController();
-
-  PlatformFile? _pickedFile;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedCategory = widget.raidByCategory.keys.first;
-    _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
-  }
-
-  Future<void> _pickImage() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      withData: true, // 바이트 데이터 가져오기 (웹 필수)
-    );
-
-    if (result != null) {
-      setState(() {
-        _pickedFile = result.files.first;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('컨닝 페이퍼 등록'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_pickedFile != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Image.memory(_pickedFile!.bytes!, height: 150, fit: BoxFit.cover),
-                ),
-              ElevatedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.image),
-                label: Text(_pickedFile == null ? '이미지 선택' : '이미지 변경'),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(labelText: '레이드 분류'),
-                items: widget.raidByCategory.keys.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _selectedCategory = val!;
-                    _selectedRaidName = widget.raidByCategory[_selectedCategory]?.first;
-                  });
-                },
-              ),
-              DropdownButtonFormField<String>(
-                value: _selectedRaidName,
-                decoration: const InputDecoration(labelText: '레이드 이름'),
-                items: widget.raidByCategory[_selectedCategory]?.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                onChanged: (val) => setState(() => _selectedRaidName = val),
-              ),
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: '공략 제목 (예: 1관문 핵심 요약)'),
-                validator: (val) => val!.isEmpty ? '제목을 입력하세요' : null,
-              ),
-              TextFormField(
-                controller: _gateController,
-                decoration: const InputDecoration(labelText: '관문 (예: 1관문, 전체)'),
-                validator: (val) => val!.isEmpty ? '관문을 입력하세요' : null,
-              ),
-              TextFormField(
-                controller: _uploaderController,
-                decoration: const InputDecoration(labelText: '출처 (작성자/사이트명 등)'),
-                // 출처는 선택사항으로 둘 수 있으나, 빈 값이면 부모에서 처리하므로 validator는 생략가능
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate() && _pickedFile != null) {
-              widget.onUpload(
-                _titleController.text,
-                _selectedRaidName!,
-                _gateController.text,
-                _uploaderController.text,
-                _pickedFile!.bytes!,
-                _pickedFile!.name,
-              );
-            } else if (_pickedFile == null) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('이미지를 선택해주세요.')));
-            }
-          },
-          child: const Text('업로드'),
-        ),
-      ],
-    );
+  String? _getYouTubeThumbnail(String url) {
+    final videoId = _getYouTubeVideoId(url);
+    return videoId != null ? "https://img.youtube.com/vi/$videoId/mqdefault.jpg" : null;
   }
 }
