@@ -1,34 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async'; // Add Timer
 import '../providers/theme_provider.dart';
-import '../services/auth_service.dart'; // 추가: 인증 서비스
-import 'login_screen.dart'; // 추가: 로그인 화면
-import '../main.dart'; // To access HomePage
+import '../services/auth_service.dart';
+import 'login_screen.dart';
+import '../main.dart';
 
 /// [LandingScreen]
 /// 앱에 처음 접속했을 때 보여지는 대문(Hero) 화면입니다.
-/// 고화질 배경 이미지와 함께 주요 기능으로 이동할 수 있는 퀵 메뉴 버튼을 제공합니다.
-class LandingScreen extends StatelessWidget {
+/// 시간에 따라 부드럽게 배경 이미지가 교체(CrossFade)되는 애니메이션 효과가 있습니다.
+class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
+
+  @override
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen> {
+  late Timer _timer;
+  int _currentImageIndex = 0;
+
+  // 사용할 배경 이미지 목록
+  final List<String> _backgroundImages = [
+    'assets/images/landing_bg.jpg',
+    'assets/images/landing_bg2.jpg',
+    'assets/images/landing_bg3.jpg',
+    'assets/images/landing_bg4.jpg',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // 5초마다 배경 이미지를 다음 인덱스로 변경
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer t) {
+      setState(() {
+        _currentImageIndex = (_currentImageIndex + 1) % _backgroundImages.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel(); // 화면을 벗어날 때 타이머 종료
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final authService = Provider.of<AuthService>(context); // 추가: 인증 서비스
+    final authService = Provider.of<AuthService>(context);
     final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
       body: Stack(
         children: [
-          // 1. 배경 이미지
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: const AssetImage('assets/images/landing_bg.jpg'), 
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(isDark ? 0.6 : 0.4),
-                  BlendMode.darken,
+          // 1. 크로스 페이드(CrossFade) 배경 이미지 애니메이션
+          Positioned.fill(
+            child: AnimatedSwitcher(
+              duration: const Duration(seconds: 2), // 2초 동안 부드럽게 전환
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: Container(
+                key: ValueKey<int>(_currentImageIndex), // key가 바뀌면 애니메이션이 발동됨
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(_backgroundImages[_currentImageIndex]),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withOpacity(isDark ? 0.6 : 0.4),
+                      BlendMode.darken,
+                    ),
+                  ),
                 ),
               ),
             ),
