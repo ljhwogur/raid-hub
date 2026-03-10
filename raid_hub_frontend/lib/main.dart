@@ -8,6 +8,7 @@ import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/landing_screen.dart'; // Import LandingScreen
 import 'widgets/skeleton_ui.dart';
 import 'widgets/cheat_sheet_card.dart';
 import 'widgets/video_cards.dart';
@@ -53,13 +54,14 @@ class RaidHubApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      home: const HomePage(),
+      home: const LandingScreen(), // Start with LandingScreen
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int initialIndex; // Add initialIndex
+  const HomePage({super.key, this.initialIndex = 0}); // Default to 0
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -69,7 +71,8 @@ class _HomePageState extends State<HomePage> {
   final ApiService _apiService = ApiService();
 
   // Navigation & Filter State
-  int _currentIndex = 0; 
+  late int _currentIndex; // Changed to late
+
   String _selectedGuideKeyword = '전체';
   String _searchQuery = '';
   String _sortOption = '최신순'; // '최신순', '제목순'
@@ -129,6 +132,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex; // Initialize from widget
     _loadData();
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text);
