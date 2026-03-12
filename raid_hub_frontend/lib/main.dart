@@ -205,100 +205,105 @@ class _HomePageState extends State<HomePage> {
     await _loadData();
   }
 
+  // 키워드 매칭 로직을 별도로 분리하여 관리
+  bool _checkKeywordMatch(dynamic item, String keyword) {
+    if (keyword == '전체') return true;
+
+    String title = (item is RaidVideo) ? item.title : (item as PlaylistItem).title;
+    String raidName = (item is RaidVideo) ? item.raidName : '';
+    bool isEtcPlaylist = (item is PlaylistItem && item.playlistId == 'PLSC2n1C_PEtut5Q3C0NTDBkiclH2Xqctm');
+
+    if (keyword == '로아 유용한 팁') return isEtcPlaylist;
+    if (isEtcPlaylist) return false;
+
+    DateTime? videoDate;
+    if (item is PlaylistItem) {
+      videoDate = DateTime.tryParse(item.publishedAt);
+    } else if (item is RaidVideo) {
+      videoDate = item.createdAt;
+    }
+
+    final actKeywords = ['서막', '1막', '2막', '3막', '4막', '종막'];
+    List<String> itemActs = [];
+    for (String act in actKeywords) {
+      String mappedRaid = _keywordMapping[act] ?? act;
+      if (title.contains(act) || title.contains(mappedRaid) || raidName.contains(act) || raidName.contains(mappedRaid)) {
+        itemActs.add(act);
+      }
+    }
+
+    // 종막 예외 처리 등 기존 로직 유지
+    if (itemActs.contains('종막') && itemActs.length > 1) {
+      if (!title.contains('종막') && !raidName.contains('종막')) itemActs.remove('종막');
+    }
+
+    bool isAfter2MakDate = videoDate != null && !videoDate.isBefore(DateTime(2024, 9, 25));
+    if (title.contains('아브렐슈드') || raidName.contains('아브렐슈드') || title.contains('2막') || raidName.contains('2막')) {
+      if (isAfter2MakDate) { if (!itemActs.contains('2막')) itemActs.add('2막'); } 
+      else { itemActs.remove('2막'); }
+    }
+
+    bool isAfter4MakDate = videoDate != null && !videoDate.isBefore(DateTime(2025, 8, 20));
+    if (title.contains('서막') || title.contains('에키드나') || raidName.contains('서막') || raidName.contains('에키드나') ||
+        title.contains('4막') || title.contains('아르모체') || raidName.contains('4막') || raidName.contains('아르모체')) {
+      if (isAfter4MakDate) {
+        itemActs.remove('서막');
+        if (!itemActs.contains('4막')) itemActs.add('4막');
+      } else {
+        itemActs.remove('4막');
+        if (!itemActs.contains('서막')) itemActs.add('서막');
+      }
+    }
+
+    String? primaryAct;
+    for (String act in actKeywords.reversed) {
+      if (itemActs.contains(act)) { primaryAct = act; break; }
+    }
+
+    if (_keywordMapping.containsKey(keyword)) {
+      return (primaryAct == keyword);
+    } else {
+      bool matches = title.contains(keyword) || raidName.contains(keyword);
+      if (keyword == '아브렐슈드' && isAfter2MakDate) return false;
+      if (matches && primaryAct != null) return false;
+      return matches;
+    }
+  }
+
   void _applyFilters() {
     List<dynamic> filteredVideos = _allContent.where((item) {
       String title = (item is RaidVideo) ? item.title : (item as PlaylistItem).title;
       String uploader = (item is RaidVideo) ? item.uploaderName : (item as PlaylistItem).channelTitle;
       String raidName = (item is RaidVideo) ? item.raidName : '';
 
-      bool matchesKeyword = false;
-      bool isEtcPlaylist = (item is PlaylistItem && item.playlistId == 'PLSC2n1C_PEtut5Q3C0NTDBkiclH2Xqctm');
-
-      if (_selectedGuideKeyword == '전체') {
-        matchesKeyword = true;
-      } else if (_selectedGuideKeyword == '로아 유용한 팁') {
-        if (isEtcPlaylist) {
-          matchesKeyword = true;
-        } else {
-          final keywords = _guideKeywords.where((k) => k != '전체' && k != '로아 유용한 팁').toList();
-          bool isKnown = keywords.any((k) => 
-              title.contains(k) || 
-              raidName == k || 
-              (_keywordMapping[k] != null && title.contains(_keywordMapping[k]!)));
-          matchesKeyword = !isKnown;
-        }
-      } else if (isEtcPlaylist) {
-        matchesKeyword = false;
-      } else {
-        DateTime? videoDate;
-        if (item is PlaylistItem) {
-          videoDate = DateTime.tryParse(item.publishedAt);
-        } else if (item is RaidVideo) {
-          videoDate = item.createdAt;
-        }
-
-        final actKeywords = ['서막', '1막', '2막', '3막', '4막', '종막'];
-        List<String> itemActs = [];
-        for (String act in actKeywords) {
-          String mappedRaid = _keywordMapping[act]!;
-          if (title.contains(act) || title.contains(mappedRaid) || raidName.contains(act) || raidName.contains(mappedRaid)) {
-             itemActs.add(act);
+      // 1. 대분류 필터링
+      bool matchesCategory = true;
+      if (_selectedCategory != '전체 레이드') {
+        List<String> subRaids = _dropdownCategory[_selectedCategory] ?? [];
+        List<String> actualRaids = subRaids.where((r) => r != '전체').toList();
+        
+        matchesCategory = actualRaids.any((raid) {
+          // 괄호 포함된 레이드명에서 실제 키워드만 추출 (예: (서막)에키드나 -> 서막, 에키드나)
+          if (raid.contains('(')) {
+            RegExp regex = RegExp(r'\((.*?)\)');
+            String act = regex.firstMatch(raid)?.group(1) ?? '';
+            String realRaid = raid.split(')').last;
+            return _checkKeywordMatch(item, act) || title.contains(realRaid) || raidName.contains(realRaid);
           }
-        }
-
-        if (itemActs.contains('종막') && itemActs.length > 1) {
-          if (!title.contains('종막') && !raidName.contains('종막')) {
-            itemActs.remove('종막');
-          }
-        }
-
-        bool isAfter2MakDate = videoDate != null && !videoDate.isBefore(DateTime(2024, 9, 25));
-        if (title.contains('아브렐슈드') || raidName.contains('아브렐슈드') || title.contains('2막') || raidName.contains('2막')) {
-          if (isAfter2MakDate) {
-            if (!itemActs.contains('2막')) itemActs.add('2막');
-          } else {
-            itemActs.remove('2막');
-          }
-        }
-
-        bool isAfter4MakDate = videoDate != null && !videoDate.isBefore(DateTime(2025, 8, 20));
-        if (title.contains('서막') || title.contains('에키드나') || raidName.contains('서막') || raidName.contains('에키드나') ||
-            title.contains('4막') || title.contains('아르모체') || raidName.contains('4막') || raidName.contains('아르모체')) {
-          if (isAfter4MakDate) {
-            itemActs.remove('서막');
-            if (!itemActs.contains('4막')) itemActs.add('4막');
-          } else {
-            itemActs.remove('4막');
-            if (!itemActs.contains('서막')) itemActs.add('서막');
-          }
-        }
-
-        String? primaryAct;
-        for (String act in actKeywords.reversed) {
-          if (itemActs.contains(act)) {
-            primaryAct = act;
-            break;
-          }
-        }
-
-        if (_keywordMapping.containsKey(_selectedGuideKeyword)) {
-          matchesKeyword = (primaryAct == _selectedGuideKeyword);
-        } else {
-          matchesKeyword = title.contains(_selectedGuideKeyword) || raidName.contains(_selectedGuideKeyword);
-          if (_selectedGuideKeyword == '아브렐슈드' && isAfter2MakDate) {
-             matchesKeyword = false;
-          } else if (matchesKeyword && primaryAct != null) {
-             matchesKeyword = false;
-          }
-        }
+          return _checkKeywordMatch(item, raid);
+        });
       }
 
+      // 2. 소분류 필터링 (기존 _selectedGuideKeyword 기반)
+      bool matchesKeyword = _checkKeywordMatch(item, _selectedGuideKeyword);
+
+      // 3. 검색어 필터링
       bool matchesSearch = _searchQuery.isEmpty || 
           title.toLowerCase().contains(_searchQuery.toLowerCase()) || 
           uploader.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           raidName.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      return matchesKeyword && matchesSearch;
+      return matchesCategory && matchesKeyword && matchesSearch;
     }).toList();
 
     if (_sortOption == '최신순') {
@@ -316,18 +321,25 @@ class _HomePageState extends State<HomePage> {
     }
     _filteredContent = filteredVideos;
 
+    // 컨닝페이퍼 필터링도 동일한 대분류 로직 적용
     List<CheatSheet> filteredCS = _allCheatSheets.where((cs) {
+      bool matchesCategory = true;
+      if (_selectedCategory != '전체 레이드') {
+        List<String> subRaids = _dropdownCategory[_selectedCategory] ?? [];
+        List<String> actualRaids = subRaids.where((r) => r != '전체').toList();
+        matchesCategory = actualRaids.any((raid) {
+           String term = raid.contains('(') ? RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? raid : raid;
+           String realRaid = raid.contains(')') ? raid.split(')').last : raid;
+           return cs.raidName.contains(term) || cs.title.contains(term) || cs.raidName.contains(realRaid) || cs.title.contains(realRaid);
+        });
+      }
+
       bool matchesKeyword = false;
       if (_selectedGuideKeyword == '전체') {
         matchesKeyword = true;
       } else if (_selectedGuideKeyword == '로아 유용한 팁') {
         final keywords = _guideKeywords.where((k) => k != '전체' && k != '로아 유용한 팁').toList();
         matchesKeyword = !keywords.any((k) => cs.raidName.contains(k) || cs.title.contains(k));
-      } else if (_selectedGuideKeyword == '2막') {
-        matchesKeyword = cs.raidName.contains('2막') || cs.title.contains('2막') || cs.gate.contains('2막');
-      } else if (_selectedGuideKeyword == '아브렐슈드') {
-        matchesKeyword = (cs.raidName.contains('아브렐슈드') || cs.title.contains('아브렐슈드')) &&
-            !(cs.raidName.contains('2막') || cs.title.contains('2막') || cs.gate.contains('2막'));
       } else {
         final term = _keywordMapping[_selectedGuideKeyword] ?? _selectedGuideKeyword;
         matchesKeyword = cs.raidName.contains(term) || cs.title.contains(term);
@@ -337,7 +349,7 @@ class _HomePageState extends State<HomePage> {
           cs.title.toLowerCase().contains(_searchQuery.toLowerCase()) || 
           cs.raidName.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      return matchesKeyword && matchesSearch;
+      return matchesCategory && matchesKeyword && matchesSearch;
     }).toList();
 
     if (_sortOption == '최신순') {
