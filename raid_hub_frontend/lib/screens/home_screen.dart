@@ -111,7 +111,22 @@ class _HomePageState extends State<HomePage> {
     String raidName = (item is RaidVideo) ? item.raidName : '';
     bool isEtcPlaylist = (item is PlaylistItem && item.playlistId == 'PLSC2n1C_PEtut5Q3C0NTDBkiclH2Xqctm');
 
-    if (keyword == '로아 유용한 팁') return isEtcPlaylist;
+    if (keyword == '로아 유용한 팁') {
+      // 1. 기존 '유용한 팁' 전용 플레이리스트 영상 매칭
+      if (isEtcPlaylist) return true;
+      
+      // 2. 미분류(Orphan) 영상 매칭: 다른 어떤 레이드 키워드에도 해당하지 않는 경우
+      // RaidConstants.guideKeywords에서 '전체'와 '로아 유용한 팁'을 제외한 나머지 레이드명들
+      final otherRaidKeywords = RaidConstants.guideKeywords.where((k) => k != '전체' && k != '로아 유용한 팁').toList();
+      
+      bool matchesAnyOtherRaid = otherRaidKeywords.any((k) {
+        final term = RaidConstants.keywordMapping[k] ?? k;
+        return title.contains(term) || raidName.contains(term) || title.contains(k) || raidName.contains(k);
+      });
+      
+      return !matchesAnyOtherRaid;
+    }
+
     if (isEtcPlaylist) return false;
 
     DateTime? videoDate;
@@ -363,20 +378,33 @@ class _HomePageState extends State<HomePage> {
     }
 
     // 초기 상태 -> 넷플릭스 스타일 가로 섹션 뷰
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      children: RaidConstants.dropdownCategory.keys
+    List<Widget> sections = RaidConstants.dropdownCategory.keys
           .where((cat) => cat != '전체 레이드') // '전체 레이드'는 섹션에서 제외
           .map((category) => _buildNetflixSection(category))
-          .toList(),
+          .toList();
+    
+    // '로아 유용한 팁' 섹션을 맨 아래에 명시적으로 추가
+    sections.add(_buildNetflixSection('로아 유용한 팁'));
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      children: sections,
     );
   }
 
   // 가로 스크롤 섹션 빌더
   Widget _buildNetflixSection(String categoryName) {
     // 해당 카테고리에 속하는 아이템들 필터링
-    final List<String> subRaids = RaidConstants.dropdownCategory[categoryName] ?? [];
-    final List<String> actualRaids = subRaids.where((r) => r != '전체').toList();
+    final List<String> actualRaids;
+    
+    // categoryName이 대분류 키(Key)인 경우와 개별 키워드인 경우를 모두 처리
+    if (RaidConstants.dropdownCategory.containsKey(categoryName)) {
+      final List<String> subRaids = RaidConstants.dropdownCategory[categoryName] ?? [];
+      actualRaids = subRaids.where((r) => r != '전체').toList();
+    } else {
+      // '로아 유용한 팁'처럼 직접 전달된 키워드인 경우
+      actualRaids = [categoryName];
+    }
     
     final sectionItems = _allContent.where((item) {
       return actualRaids.any((raid) {
