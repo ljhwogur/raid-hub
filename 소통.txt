@@ -1,17 +1,8 @@
-PS C:\GitHub\raid-hub\raid_hub_frontend> flutter build web --release
 Target dart2js failed: ProcessException: Process exited abnormally with exit code 1:
-lib/screens/home_screen.dart:391:21:
-Error: Expected an identifier, but got '?'.
-                    ? VideoCard(
-                    ^
-lib/screens/home_screen.dart:388:31:
-Error: Too many positional arguments: 0 allowed, but 1 found.
-              return Container(
-                              ^
-/C:/flutter/packages/flutter/lib/src/widgets/container.dart:255:3:
-Info: Found this candidate, but the arguments don't match.
-  Container({
-  ^^^^^^^^^
+lib/screens/landing_screen.dart:481:1:
+Error: Expected a declaration, but got '}'.
+}
+^
 Error: Compilation failed.
   Command: C:\flutter\bin\cache\dart-sdk\bin\dart.exe compile js --platform-binaries=C:\flutter\bin\cache\flutter_web_sdk\kernel --invoker=flutter_tool -Ddart.vm.product=true -DFLUTTER_VERSION=3.32.8 -DFLUTTER_CHANNEL=stable    
   -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=edada7c56e -DFLUTTER_ENGINE_REVISION=ef0cd00091 -DFLUTTER_DART_VERSION=3.8.1 -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false     
@@ -58,5 +49,5 @@ Error: Compilation failed.
 #19     main (package:flutter_tools/executable.dart:102:3)
 <asynchronous suspension>
 
-Compiling lib\main.dart for the Web...                              5.9s
+Compiling lib\main.dart for the Web...                              5.8s
 Error: Failed to compile application for the Web.
