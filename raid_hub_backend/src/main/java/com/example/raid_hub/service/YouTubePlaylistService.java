@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -40,6 +41,7 @@ public class YouTubePlaylistService {
     return parser.parse(root, playlistId);
   }
 
+  @Cacheable(value = "youtubePlaylist", key = "#playlistId")
   public YouTubePlaylistItemsResponse fetchAllPlaylistItems(String playlistId, Integer maxResults) {
     validateInputs(playlistId);
 
