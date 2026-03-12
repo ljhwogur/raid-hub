@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class CheatSheet {
   final int? id;
   final String title;
@@ -30,5 +32,8 @@ class CheatSheet {
   }
 
   // Full URL helper (Base URL should be appended)
-  String get fullImageUrl => 'http://20.89.237.161$imageUrl';
+  String get fullImageUrl {
+    final baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080';
+    return '$baseUrl$imageUrl';
+  }
 }

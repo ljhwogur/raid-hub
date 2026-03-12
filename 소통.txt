@@ -1,112 +1,128 @@
-PS C:\GitHub\raid-hub\raid_hub_frontend> flutter build web --release
-Target dart2js failed: ProcessException: Process exited abnormally with exit code 1:
-lib/main.dart:317:48:
-Error: Local variable 'titleA' can't be referenced before it is declared.
-            String titleA = (a is RaidVideo) ? titleA = (a as RaidVideo).title : titleA = (a as PlaylistItem).title;
-                                               ^^^^^^
-lib/main.dart:317:20:
-Info: This is the declaration of the variable 'titleA'.
-            String titleA = (a is RaidVideo) ? titleA = (a as RaidVideo).title : titleA = (a as PlaylistItem).title;
-                   ^^^^^^
-lib/main.dart:317:82:
-Error: Local variable 'titleA' can't be referenced before it is declared.
-            String titleA = (a is RaidVideo) ? titleA = (a as RaidVideo).title : titleA = (a as PlaylistItem).title;
-                                                                                 ^^^^^^
-lib/main.dart:317:20:
-Info: This is the declaration of the variable 'titleA'.
-            String titleA = (a is RaidVideo) ? titleA = (a as RaidVideo).title : titleA = (a as PlaylistItem).title;
-                   ^^^^^^
-lib/main.dart:318:48:
-Error: Local variable 'titleB' can't be referenced before it is declared.
-            String titleB = (b is RaidVideo) ? titleB = (b as RaidVideo).title : titleB = (b as PlaylistItem).title;
-                                               ^^^^^^
-lib/main.dart:318:20:
-Info: This is the declaration of the variable 'titleB'.
-            String titleB = (b is RaidVideo) ? titleB = (b as RaidVideo).title : titleB = (b as PlaylistItem).title;
-                   ^^^^^^
-lib/main.dart:318:82:
-Error: Local variable 'titleB' can't be referenced before it is declared.
-            String titleB = (b is RaidVideo) ? titleB = (b as RaidVideo).title : titleB = (b as PlaylistItem).title;
-                                                                                 ^^^^^^
-lib/main.dart:318:20:
-Info: This is the declaration of the variable 'titleB'.
-            String titleB = (b is RaidVideo) ? titleB = (b as RaidVideo).title : titleB = (b as PlaylistItem).title;
-                   ^^^^^^
-lib/main.dart:317:48:
-Error: The setter 'titleA' isn't defined for the class '_HomePageState'.
- - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
-            String titleA = (a is RaidVideo) ? titleA = (a as RaidVideo).title : titleA = (a as PlaylistItem).title;
-                                               ^^^^^^
-lib/main.dart:317:82:
-Error: The setter 'titleA' isn't defined for the class '_HomePageState'.
- - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
-            String titleA = (a is RaidVideo) ? titleA = (a as RaidVideo).title : titleA = (a as PlaylistItem).title;
-                                                                                 ^^^^^^
-lib/main.dart:318:48:
-Error: The setter 'titleB' isn't defined for the class '_HomePageState'.
- - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
-            String titleB = (b is RaidVideo) ? titleB = (b as RaidVideo).title : titleB = (b as PlaylistItem).title;
-                                               ^^^^^^
-lib/main.dart:318:82:
-Error: The setter 'titleB' isn't defined for the class '_HomePageState'.
- - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
-            String titleB = (b is RaidVideo) ? titleB = (b as RaidVideo).title : titleB = (b as PlaylistItem).title;
-                                                                                 ^^^^^^
-lib/main.dart:319:20:
-Error: The getter 'titleA' isn't defined for the class '_HomePageState'.
- - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
-            return titleA.compareTo(titleB);
-                   ^^^^^^
-lib/main.dart:319:37:
-Error: The getter 'titleB' isn't defined for the class '_HomePageState'.
- - '_HomePageState' is from 'package:raid_hub_frontend/main.dart' ('lib/main.dart').
-            return titleA.compareTo(titleB);
-                                    ^^^^^^
-Error: Compilation failed.
-  Command: C:\flutter\bin\cache\dart-sdk\bin\dart.exe compile js --platform-binaries=C:\flutter\bin\cache\flutter_web_sdk\kernel --invoker=flutter_tool -Ddart.vm.product=true -DFLUTTER_VERSION=3.32.8
-  -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=edada7c56e -DFLUTTER_ENGINE_REVISION=ef0cd00091 -DFLUTTER_DART_VERSION=3.8.1
-  -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/ef0cd000916d64fa0c5d09cc809fa7ad244a5767/ --native-null-assertions --no-source-maps
-  -o C:\GitHub\raid-hub\raid_hub_frontend\.dart_tool\flutter_build\f7a4e328987d5746f6c2ce963f21d24d\app.dill --packages=C:\GitHub\raid-hub\raid_hub_frontend\.dart_tool\package_config.json --cfe-only
-  C:\GitHub\raid-hub\raid_hub_frontend\.dart_tool\flutter_build\f7a4e328987d5746f6c2ce963f21d24d\main.dart
-#0      RunResult.throwException (package:flutter_tools/src/base/process.dart:118:5)
-#1      _DefaultProcessUtils.run (package:flutter_tools/src/base/process.dart:344:19)
-<asynchronous suspension>
-#2      Dart2JSTarget.build (package:flutter_tools/src/build_system/targets/web.dart:201:5)
-<asynchronous suspension>
-#3      _BuildInstance._invokeInternal (package:flutter_tools/src/build_system/build_system.dart:873:9)
-<asynchronous suspension>
-#4      Future.wait.<anonymous closure> (dart:async/future.dart:525:21)
-<asynchronous suspension>
-#5      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:811:32)
-<asynchronous suspension>
-#6      Future.wait.<anonymous closure> (dart:async/future.dart:525:21)
-<asynchronous suspension>
-#7      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:811:32)
-<asynchronous suspension>
-#8      FlutterBuildSystem.build (package:flutter_tools/src/build_system/build_system.dart:629:16)
-<asynchronous suspension>
-#9      WebBuilder.buildWeb (package:flutter_tools/src/web/compile.dart:91:34)
-<asynchronous suspension>
-#10     BuildWebCommand.runCommand (package:flutter_tools/src/commands/build_web.dart:246:5)
-<asynchronous suspension>
-#11     FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1563:27)
-<asynchronous suspension>
-#12     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
-<asynchronous suspension>
-#13     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
-<asynchronous suspension>
-#14     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:494:9)
-<asynchronous suspension>
-#15     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
-<asynchronous suspension>
-#16     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:431:5)
-<asynchronous suspension>
-#17     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:98:11)
-<asynchronous suspension>
-#18     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
-<asynchronous suspension>
-#19     main (package:flutter_tools/executable.dart:102:3)
-<asynchronous suspension>
-
-Compiling lib\main.dart for the Web...                             21.4s
-Error: Failed to compile application for the Web.
+flutter_bootstrap.js:31 Exception while loading service worker: Error: Service Worker API unavailable.
+The current context is NOT secure.
+Read more: https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts
+    at g.loadServiceWorker (flutter_bootstrap.js:3:99)
+    at S.load (flutter_bootstrap.js:31:1133)
+    at flutter_bootstrap.js:40:17
+(anonymous) @ flutter_bootstrap.js:31
+Promise.catch
+load @ flutter_bootstrap.js:31
+(anonymous) @ flutter_bootstrap.js:40
+main.dart.js:27013 Starting fresh: Always logged out on entry.
+main.dart.js:54635  GET http://20.89.237.161/login net::ERR_TOO_MANY_REDIRECTS
+(anonymous) @ main.dart.js:54635
+(anonymous) @ main.dart.js:4846
+$2 @ main.dart.js:36839
+D @ main.dart.js:4832
+a7h @ main.dart.js:54649
+tp @ main.dart.js:54623
+(anonymous) @ main.dart.js:54664
+(anonymous) @ main.dart.js:4846
+$2 @ main.dart.js:36839
+D @ main.dart.js:4832
+$0 @ main.dart.js:54669
+(anonymous) @ main.dart.js:54592
+(anonymous) @ main.dart.js:4846
+$2 @ main.dart.js:36839
+D @ main.dart.js:4832
+acg @ main.dart.js:54622
+t6 @ main.dart.js:54579
+r3 @ main.dart.js:54578
+$0 @ main.dart.js:55912
+Xd @ main.dart.js:55739
+wc @ main.dart.js:55865
+wc @ main.dart.js:79050
+$2 @ main.dart.js:55871
+$1 @ main.dart.js:55902
+fp @ main.dart.js:43757
+bF @ main.dart.js:43762
+a60 @ main.dart.js:55858
+a9 @ main.dart.js:55848
+QG @ main.dart.js:74591
+bi @ main.dart.js:74564
+Eb @ main.dart.js:73674
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+e6 @ main.dart.js:73833
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+e6 @ main.dart.js:73794
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+j_ @ main.dart.js:73678
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+Eb @ main.dart.js:73675
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+e6 @ main.dart.js:73794
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+e6 @ main.dart.js:73794
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+e6 @ main.dart.js:73794
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+j_ @ main.dart.js:73678
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+Eb @ main.dart.js:73675
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508
+dA @ main.dart.js:73407
+j_ @ main.dart.js:73650
+j_ @ main.dart.js:73678
+Bx @ main.dart.js:73595
+Xf @ main.dart.js:73596
+Eb @ main.dart.js:73644
+Eb @ main.dart.js:73675
+e6 @ main.dart.js:73643
+vq @ main.dart.js:73508

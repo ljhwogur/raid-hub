@@ -57,6 +57,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/uploads/cheatsheets/**")
                     .permitAll() // Allow everyone to see the images
+                    .requestMatchers("/error")
+                    .permitAll() // Allow Spring Boot's error handler
                     .requestMatchers(HttpMethod.GET, "/api/**")
                     .permitAll()
                     .anyRequest()
@@ -66,20 +68,16 @@ public class SecurityConfig {
                 exceptionHandling
                     .authenticationEntryPoint(
                         (request, response, authException) -> {
-                          // API 요청인 경우 리다이렉트 대신 401 반환
-                          if (request.getRequestURI().startsWith("/api/")) {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                            response.setCharacterEncoding("UTF-8");
-                            Map<String, Object> responseMap = new HashMap<>();
-                            responseMap.put("success", false);
-                            responseMap.put("message", "인증이 필요합니다.");
-                            response
-                                .getWriter()
-                                .write(objectMapper.writeValueAsString(responseMap));
-                          } else {
-                            response.sendRedirect("/login");
-                          }
+                          // 모든 요청에 대해 401 반환 (REST API 이므로 리다이렉트 금지)
+                          response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                          response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                          response.setCharacterEncoding("UTF-8");
+                          Map<String, Object> responseMap = new HashMap<>();
+                          responseMap.put("success", false);
+                          responseMap.put("message", "인증이 필요합니다.");
+                          response
+                              .getWriter()
+                              .write(objectMapper.writeValueAsString(responseMap));
                         })
                     .accessDeniedHandler(
                         (request, response, accessDeniedException) -> {
