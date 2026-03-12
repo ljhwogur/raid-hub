@@ -92,7 +92,17 @@ class CheatSheetCard extends StatelessWidget {
                   children: [
                     Center(
                       child: InteractiveViewer(
-                        child: Image.network(cs.fullImageUrl),
+                        panEnabled: true, // Enable panning
+                        scaleEnabled: true, // Enable zooming
+                        minScale: 0.5,
+                        maxScale: 5.0, // Allow up to 5x zoom
+                        child: Image.network(
+                          cs.fullImageUrl,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(child: CircularProgressIndicator());
+                          },
+                        ),
                       ),
                     ),
                     Positioned(

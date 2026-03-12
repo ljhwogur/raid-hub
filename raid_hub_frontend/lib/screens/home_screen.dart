@@ -251,6 +251,15 @@ class _HomePageState extends State<HomePage> {
     _filteredCheatSheets = filteredCS;
   }
 
+  Widget _buildCenteredContent(Widget child) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1400), // 최대 너비 제한 (너무 넓어지는 것 방지)
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isLoading && _allContent.isNotEmpty) _applyFilters();
@@ -289,20 +298,23 @@ class _HomePageState extends State<HomePage> {
                 }
             },
           ),
+          const SizedBox(width: 16), // 우측 여백 추가
         ],
       ),
-      body: Column(
-        children: [
-          _buildSearchAndSortBar(),
-          _buildDropdownFilters(),
-          Expanded(
-            child: _isLoading 
-              ? _buildSkeletonGrid() 
-              : (_allContent.isEmpty)
-                ? _buildErrorView()
-                : (_currentIndex == 0 ? _buildVideosContent() : _buildCheatSheetsGrid()),
-          ),
-        ],
+      body: _buildCenteredContent(
+        Column(
+          children: [
+            _buildSearchAndSortBar(),
+            _buildDropdownFilters(),
+            Expanded(
+              child: _isLoading 
+                ? _buildSkeletonGrid() 
+                : (_allContent.isEmpty)
+                  ? _buildErrorView()
+                  : (_currentIndex == 0 ? _buildVideosContent() : _buildCheatSheetsGrid()),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
