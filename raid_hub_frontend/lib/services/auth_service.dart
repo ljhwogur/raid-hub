@@ -2,6 +2,7 @@ import 'package:flutter/material.dart'; // Import for ChangeNotifier
 import 'package:http/http.dart' as http;
 import 'package:http/browser_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 import 'dart:convert';
 
 class AuthService extends ChangeNotifier { // Extend ChangeNotifier
@@ -18,7 +19,7 @@ class AuthService extends ChangeNotifier { // Extend ChangeNotifier
   static const String _sessionIdKey = 'session_id';
   static const String _usernameKey = 'username';
 
-  final String _baseUrl = 'http://20.89.237.161';
+  String get _baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080';
 
   bool get isAuthenticated => _sessionCookie != null;
   String? get username => _username;

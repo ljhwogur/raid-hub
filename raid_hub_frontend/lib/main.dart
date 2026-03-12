@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add flutter_dotenv
 import 'models/raid_video.dart';
 import 'models/playlist_item.dart';
 import 'models/cheat_sheet.dart';
@@ -16,6 +17,8 @@ import 'widgets/upload_dialogs.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env"); // Initialize dotenv
+  
   final authService = AuthService();
   await authService.initialize();
 

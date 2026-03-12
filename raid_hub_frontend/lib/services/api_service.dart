@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/browser_client.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 import '../models/raid_video.dart';
 import '../models/playlist_item.dart';
 import '../models/cheat_sheet.dart'; // Import CheatSheet model
 import 'package:raid_hub_frontend/services/auth_service.dart'; // Import AuthService
 
 class ApiService {
-  final String baseUrl = "http://20.89.237.161/api/videos";
-  final String _apiBaseUrl = "http://20.89.237.161/api"; // Added base API URL
+  final String baseUrl = "${dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080'}/api/videos";
+  final String _apiBaseUrl = "${dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080'}/api"; // Added base API URL
   final AuthService _authService = AuthService(); // Get the AuthService instance
   final http.Client _client = BrowserClient()..withCredentials = true;
 
@@ -208,7 +209,7 @@ class ApiService {
   Future<List<PlaylistItem>> getPlaylistItems(String playlistId) async {
     try {
       final response = await _client.get(
-        Uri.parse('http://20.89.237.161/api/youtube/playlist-items?playlistId=$playlistId&fetchAll=true'),
+        Uri.parse('$_apiBaseUrl/youtube/playlist-items?playlistId=$playlistId&fetchAll=true'),
       );
 
       if (response.statusCode == 200) {
