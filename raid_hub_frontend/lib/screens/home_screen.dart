@@ -31,7 +31,6 @@ class _HomePageState extends State<HomePage> {
 
   String _selectedGuideKeyword = '전체';
   String _searchQuery = '';
-  String _sortOption = '최신순'; // '최신순', '제목순'
   String _selectedCategory = '전체 레이드';
   String _selectedRaid = '전체';
 
@@ -198,52 +197,43 @@ class _HomePageState extends State<HomePage> {
       return matchesCategory && matchesKeyword && matchesSearch;
     }).toList();
 
-    if (_sortOption == '최신순') {
-        filteredVideos.sort((a, b) {
-            // 1. 드롭다운 카테고리 순서 기반 정렬 (현재 선택된 대분류 기준)
-            List<String> currentRaids = RaidConstants.dropdownCategory[_selectedCategory] ?? [];
-            if (currentRaids.isEmpty) currentRaids = RaidConstants.dropdownCategory['군단장 레이드']!; // 기본값 폴백
+    // 1순위: 드롭다운 카테고리 순서 기반 정렬, 2순위: 최신순 (기본값)
+    filteredVideos.sort((a, b) {
+        List<String> currentRaids = RaidConstants.dropdownCategory[_selectedCategory] ?? [];
+        if (currentRaids.isEmpty) currentRaids = RaidConstants.dropdownCategory['군단장 레이드']!;
 
-            int getRaidIndex(dynamic item) {
-              String title = (item is RaidVideo) ? item.title : (item as PlaylistItem).title;
-              String raidName = (item is RaidVideo) ? item.raidName : '';
+        int getRaidIndex(dynamic item) {
+          String title = (item is RaidVideo) ? item.title : (item as PlaylistItem).title;
+          String raidName = (item is RaidVideo) ? item.raidName : '';
 
-              for (int i = 0; i < currentRaids.length; i++) {
-                String raid = currentRaids[i];
-                if (raid == '전체') continue; // '전체'는 매칭 기준에서 제외
-                
-                if (raid.contains('(')) {
-                  String act = RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? '';
-                  String realRaid = raid.split(')').last;
-                  if (title.contains(act) || title.contains(realRaid) || raidName.contains(act) || raidName.contains(realRaid)) {
-                    return i;
-                  }
-                } else if (title.contains(raid) || raidName.contains(raid)) {
-                  return i;
-                }
+          for (int i = 0; i < currentRaids.length; i++) {
+            String raid = currentRaids[i];
+            if (raid == '전체') continue;
+            
+            if (raid.contains('(')) {
+              String act = RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? '';
+              String realRaid = raid.split(')').last;
+              if (title.contains(act) || title.contains(realRaid) || raidName.contains(act) || raidName.contains(realRaid)) {
+                return i;
               }
-              return 999;
+            } else if (title.contains(raid) || raidName.contains(raid)) {
+              return i;
             }
+          }
+          return 999;
+        }
 
-            int indexA = getRaidIndex(a);
-            int indexB = getRaidIndex(b);
+        int indexA = getRaidIndex(a);
+        int indexB = getRaidIndex(b);
 
-            if (indexA != indexB) {
-              return indexA.compareTo(indexB);
-            }
+        if (indexA != indexB) {
+          return indexA.compareTo(indexB);
+        }
 
-            // 2. 같은 레이드 내에서는 최신순
-            DateTime dateA = (a is RaidVideo) ? (a.createdAt ?? DateTime(2000)) : DateTime.tryParse((a as PlaylistItem).publishedAt) ?? DateTime(2000);
-            DateTime dateB = (b is RaidVideo) ? (b.createdAt ?? DateTime(2000)) : DateTime.tryParse((b as PlaylistItem).publishedAt) ?? DateTime(2000);
-            return dateB.compareTo(dateA);
-        });
-    } else {
-        filteredVideos.sort((a, b) {
-            String titleA = (a is RaidVideo) ? a.title : (a as PlaylistItem).title;
-            String titleB = (b is RaidVideo) ? b.title : (b as PlaylistItem).title;
-            return titleA.compareTo(titleB);
-        });
-    }
+        DateTime dateA = (a is RaidVideo) ? (a.createdAt ?? DateTime(2000)) : DateTime.tryParse((a as PlaylistItem).publishedAt) ?? DateTime(2000);
+        DateTime dateB = (b is RaidVideo) ? (b.createdAt ?? DateTime(2000)) : DateTime.tryParse((b as PlaylistItem).publishedAt) ?? DateTime(2000);
+        return dateB.compareTo(dateA);
+    });
     _filteredContent = filteredVideos;
 
     List<CheatSheet> filteredCS = _allCheatSheets.where((cs) {
@@ -276,11 +266,8 @@ class _HomePageState extends State<HomePage> {
       return matchesCategory && matchesKeyword && matchesSearch;
     }).toList();
 
-    if (_sortOption == '최신순') {
-        filteredCS.sort((a, b) => (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000)));
-    } else {
-        filteredCS.sort((a, b) => a.title.compareTo(b.title));
-    }
+    // 컨닝페이퍼 정렬 (최신순 기본)
+    filteredCS.sort((a, b) => (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000)));
     _filteredCheatSheets = filteredCS;
   }
 
@@ -646,18 +633,6 @@ class _HomePageState extends State<HomePage> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          DropdownButton<String>(
-            value: _sortOption,
-            underline: const SizedBox(),
-            icon: const Icon(Icons.sort),
-            items: ['최신순', '제목순'].map((String val) {
-              return DropdownMenuItem<String>(value: val, child: Text(val));
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) setState(() => _sortOption = val);
-            },
           ),
         ],
       ),
