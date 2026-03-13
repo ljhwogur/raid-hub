@@ -326,4 +326,52 @@ class ApiService {
       throw Exception('Error deleting post: $e');
     }
   }
+
+  // --- Statistics & Insights APIs ---
+  Future<void> logActivity({
+    required String activityType,
+    String? targetTitle,
+    String? searchQuery,
+  }) async {
+    try {
+      // 기기 유형 판별 (웹인지, 모바일 환경인지)
+      String deviceType = kIsWeb ? 'PC' : 'MOBILE';
+      // 추가적인 웹 브라우저 내 모바일 판별 로직 (간단히)
+      if (kIsWeb) {
+        final userAgent = window.navigator.userAgent.toLowerCase();
+        if (userAgent.contains('iphone') || userAgent.contains('android')) {
+          deviceType = 'MOBILE';
+        }
+      }
+
+      await _client.post(
+        Uri.parse('$_apiBaseUrl/stats/log'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'activityType': activityType,
+          'targetTitle': targetTitle,
+          'searchQuery': searchQuery,
+          'deviceType': deviceType,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Silent log error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getDashboardStats() async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$_apiBaseUrl/stats/dashboard'),
+        headers: _authService.getAuthHeaders(),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes));
+      }
+      throw Exception('Failed to fetch stats');
+    } catch (e) {
+      debugPrint('Error fetching stats: $e');
+      return {};
+    }
+  }
 }

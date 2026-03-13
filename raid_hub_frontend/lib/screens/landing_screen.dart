@@ -11,6 +11,7 @@ import '../services/api_service.dart'; // Add ApiService import
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'admin_post_screen.dart'; // Add AdminPostScreen import
+import 'admin_dashboard_screen.dart'; // Add AdminDashboardScreen import
 
 /// [LandingScreen]
 /// 앱의 첫인상을 결정하는 세련된 랜딩 페이지입니다.
@@ -290,6 +291,14 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                           icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                           onPressed: () => themeProvider.toggleTheme(),
                         ),
+                        if (authService.isAdmin) ...[
+                          Container(width: 1, height: 20, color: Colors.white24),
+                          _buildHeaderIcon(
+                            icon: Icons.bar_chart_rounded,
+                            tooltip: '통계 대시보드',
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
+                          ),
+                        ],
                         Container(width: 1, height: 20, color: Colors.white24),
                         _buildHeaderIcon(
                           icon: authService.isAuthenticated ? Icons.logout_rounded : Icons.admin_panel_settings_rounded,

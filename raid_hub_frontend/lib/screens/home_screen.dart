@@ -54,6 +54,21 @@ class _HomePageState extends State<HomePage> {
     _loadData();
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text);
+      // 검색 로그 기록 (의미 있는 검색어인 경우에만)
+      if (_searchQuery.length >= 2) {
+        _logSearch(_searchQuery);
+      }
+    });
+  }
+
+  Timer? _searchLogTimer;
+  void _logSearch(String query) {
+    _searchLogTimer?.cancel();
+    _searchLogTimer = Timer(const Duration(seconds: 2), () {
+      _apiService.logActivity(
+        activityType: 'SEARCH',
+        searchQuery: query,
+      );
     });
   }
 
