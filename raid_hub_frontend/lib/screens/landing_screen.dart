@@ -10,6 +10,7 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart'; // Add ApiService import
 import 'login_screen.dart';
 import 'home_screen.dart';
+import 'admin_post_screen.dart'; // Add AdminPostScreen import
 
 /// [LandingScreen]
 /// 앱의 첫인상을 결정하는 세련된 랜딩 페이지입니다.
@@ -393,6 +394,18 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                           onTap: () => Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (_) => const HomePage(initialIndex: 1)),
+                          ),
+                        ),
+                        _buildGlassButton(
+                          context,
+                          title: '관리자 소식',
+                          subtitle: '패치노트 및 공지사항',
+                          icon: Icons.notifications_active_rounded,
+                          primaryColor: Colors.orangeAccent,
+                          width: isWide ? 380 : 320,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AdminPostScreen()),
                           ),
                         ),
                       ],

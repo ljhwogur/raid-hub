@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 import '../models/raid_video.dart';
 import '../models/playlist_item.dart';
 import '../models/cheat_sheet.dart'; // Import CheatSheet model
+import '../models/admin_post.dart'; // Import AdminPost model
 import 'package:raid_hub_frontend/services/auth_service.dart'; // Import AuthService
 
 class ApiService {
@@ -264,6 +265,65 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error updating notice: $e');
+    }
+  }
+
+  // --- Admin Post APIs ---
+  Future<List<AdminPost>> getAdminPosts() async {
+    try {
+      final response = await _client.get(Uri.parse('$_apiBaseUrl/admin-posts'));
+      if (response.statusCode == 200) {
+        List<dynamic> body = jsonDecode(utf8.decode(response.bodyBytes));
+        return body.map((dynamic item) => AdminPost.fromJson(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching admin posts: $e');
+      return [];
+    }
+  }
+
+  Future<void> createAdminPost(AdminPost post) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$_apiBaseUrl/admin-posts'),
+        headers: {
+          'Content-Type': 'application/json',
+          ..._authService.getAuthHeaders()
+        },
+        body: jsonEncode(post.toJson()),
+      );
+      if (response.statusCode != 200) throw Exception('Failed to create post');
+    } catch (e) {
+      throw Exception('Error creating post: $e');
+    }
+  }
+
+  Future<void> updateAdminPost(int id, AdminPost post) async {
+    try {
+      final response = await _client.put(
+        Uri.parse('$_apiBaseUrl/admin-posts/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          ..._authService.getAuthHeaders()
+        },
+        body: jsonEncode(post.toJson()),
+      );
+      if (response.statusCode != 200) throw Exception('Failed to update post');
+    } catch (e) {
+      throw Exception('Error updating post: $e');
+    }
+  }
+
+  Future<void> deleteAdminPost(int id) async {
+    try {
+      final response = await _client.delete(
+        Uri.parse('$_apiBaseUrl/admin-posts/$id'),
+        headers: _authService.getAuthHeaders(),
+      );
+      if (response.statusCode != 200) throw Exception('Failed to delete post');
+    } catch (e) {
+      throw Exception('Error deleting post: $e');
     }
   }
 }
