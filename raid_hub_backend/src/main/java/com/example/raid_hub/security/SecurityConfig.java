@@ -136,11 +136,13 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    // 플러터 웹의 모든 출처 허용 (Credentials 포함 시 AllowedOriginPatterns 사용 필수)
+    // 프론트엔드 도메인 추가
     config.setAllowedOriginPatterns(Arrays.asList(
-        "http://localhost:*", 
+        "http://localhost:*",
         "http://127.0.0.1:*",
-        "http://20.89.237.161*"
+        "http://20.89.237.161*",
+        "https://raidhub.co.kr",
+        "https://www.raidhub.co.kr"
     ));
     config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(Arrays.asList("*"));
