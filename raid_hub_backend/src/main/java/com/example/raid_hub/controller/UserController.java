@@ -1,14 +1,17 @@
 package com.example.raid_hub.controller;
 
 import com.example.raid_hub.dto.UserRegistrationDto;
+import com.example.raid_hub.dto.PasswordChangeDto;
 import com.example.raid_hub.entity.User;
 import com.example.raid_hub.service.UserService;
 import jakarta.validation.Valid;
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +22,18 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
   private final UserService userService;
+
+  @PutMapping("/change-password")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Map<String, String>> changePassword(
+      Principal principal, 
+      @Valid @RequestBody PasswordChangeDto dto) {
+    
+    userService.changePassword(principal.getName(), dto);
+    Map<String, String> response = new HashMap<>();
+    response.put("message", "비밀번호가 성공적으로 변경되었습니다.");
+    return ResponseEntity.ok(response);
+  }
 
   @GetMapping("/me")
   public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {

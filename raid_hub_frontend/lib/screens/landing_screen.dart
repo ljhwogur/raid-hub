@@ -298,6 +298,12 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                             tooltip: '통계 대시보드',
                             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
                           ),
+                          Container(width: 1, height: 20, color: Colors.white24),
+                          _buildHeaderIcon(
+                            icon: Icons.lock_reset_rounded,
+                            tooltip: '비밀번호 변경',
+                            onPressed: _showChangePasswordDialog,
+                          ),
                         ],
                         Container(width: 1, height: 20, color: Colors.white24),
                         _buildHeaderIcon(
@@ -458,6 +464,66 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1C20),
+        title: const Text('비밀번호 변경', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildPasswordField(currentPasswordController, '현재 비밀번호'),
+            const SizedBox(height: 16),
+            _buildPasswordField(newPasswordController, '새 비밀번호'),
+            const SizedBox(height: 16),
+            _buildPasswordField(confirmPasswordController, '새 비밀번호 확인'),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+          ElevatedButton(
+            onPressed: () async {
+              if (newPasswordController.text != confirmPasswordController.text) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('새 비밀번호가 일치하지 않습니다.')));
+                return;
+              }
+              try {
+                await _apiService.changePassword(currentPasswordController.text, newPasswordController.text);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('비밀번호가 변경되었습니다.')));
+                }
+              } catch (e) {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('변경 실패: $e')));
+              }
+            },
+            child: const Text('변경'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPasswordField(TextEditingController controller, String label) {
+    return TextField(
+      controller: controller,
+      obscureText: true,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white54),
+        filled: true,
+        fillColor: Colors.black26,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }

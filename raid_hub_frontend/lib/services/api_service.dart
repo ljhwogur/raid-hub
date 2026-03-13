@@ -327,6 +327,28 @@ class ApiService {
     }
   }
 
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final response = await _client.put(
+        Uri.parse('$_apiBaseUrl/users/change-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          ..._authService.getAuthHeaders()
+        },
+        body: jsonEncode({
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      );
+      if (response.statusCode != 200) {
+        final error = jsonDecode(utf8.decode(response.bodyBytes));
+        throw Exception(error['message'] ?? '비밀번호 변경 실패');
+      }
+    } catch (e) {
+      throw Exception('비밀번호 변경 중 오류 발생: $e');
+    }
+  }
+
   // --- Statistics & Insights APIs ---
   Future<void> logActivity({
     required String activityType,
