@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/cheat_sheet.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart'; // Add ApiService import
 
 /// [CheatSheetCard]
 /// 단일 컨닝페이퍼(CheatSheet) 정보를 표시하는 카드 위젯입니다.
@@ -19,13 +20,21 @@ class CheatSheetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = ApiService(); // Add instance
 
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
           InkWell(
-            onTap: () => _showFullImage(context, cheatSheet),
+            onTap: () {
+              // 클릭 로그 기록
+              apiService.logActivity(
+                activityType: 'CHEATSHEET_CLICK',
+                targetTitle: '${cheatSheet.raidName} | ${cheatSheet.title}',
+              );
+              _showFullImage(context, cheatSheet);
+            },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:async'; // Add Timer import
 import 'dart:ui'; // For ImageFilter
 import 'package:provider/provider.dart';
 import '../models/raid_video.dart';

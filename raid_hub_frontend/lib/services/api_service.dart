@@ -334,12 +334,15 @@ class ApiService {
     String? searchQuery,
   }) async {
     try {
-      // 기기 유형 판별 (웹인지, 모바일 환경인지)
-      String deviceType = kIsWeb ? 'PC' : 'MOBILE';
-      // 추가적인 웹 브라우저 내 모바일 판별 로직 (간단히)
-      if (kIsWeb) {
-        final userAgent = window.navigator.userAgent.toLowerCase();
-        if (userAgent.contains('iphone') || userAgent.contains('android')) {
+      // 기기 유형 판별 (기본적으로 PC, 모바일 플랫폼이면 MOBILE)
+      String deviceType = 'PC';
+      
+      if (!kIsWeb) {
+        deviceType = 'MOBILE';
+      } else {
+        // 웹 환경에서 모바일 기기인지 체크
+        if (defaultTargetPlatform == TargetPlatform.iOS || 
+            defaultTargetPlatform == TargetPlatform.android) {
           deviceType = 'MOBILE';
         }
       }

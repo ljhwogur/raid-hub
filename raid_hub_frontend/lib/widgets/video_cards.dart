@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/raid_video.dart';
 import '../models/playlist_item.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart'; // Add ApiService import
 import '../screens/video_player_screen.dart';
 
 /// [VideoCard]
@@ -23,6 +24,7 @@ class VideoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = ApiService(); // Add instance
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -38,6 +40,12 @@ class VideoCard extends StatelessWidget {
         children: [
           InkWell(
             onTap: () {
+              // 활동 로그 기록
+              apiService.logActivity(
+                activityType: 'VIDEO_CLICK',
+                targetTitle: video.title,
+              );
+
               final videoId = _getYouTubeVideoId(video.youtubeUrl);
               if (videoId != null) {
                 Navigator.push(
@@ -150,6 +158,7 @@ class PlaylistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = ApiService(); // Define apiService here
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -157,6 +166,12 @@ class PlaylistCard extends StatelessWidget {
         children: [
           InkWell(
             onTap: () {
+              // 활동 로그 기록
+              apiService.logActivity(
+                activityType: 'VIDEO_CLICK',
+                targetTitle: item.title,
+              );
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
