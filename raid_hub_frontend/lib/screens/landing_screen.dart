@@ -30,6 +30,9 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
     'assets/images/landing_bg4.jpg',
   ];
 
+  final ApiService _apiService = ApiService();
+  String _noticeContent = '';
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +56,10 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
   }
 
   Future<void> _checkAndShowNotice() async {
+    // DB에서 최신 공지사항 가져오기
+    _noticeContent = await _apiService.getNotice();
+    if (_noticeContent.isEmpty) return;
+
     final prefs = await SharedPreferences.getInstance();
     final lastDismissed = prefs.getInt('notice_last_dismissed') ?? 0;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -65,6 +72,7 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
 
   void _showNoticeDialog() {
     final screenWidth = MediaQuery.of(context).size.width;
+    final authService = Provider.of<AuthService>(context, listen: false);
     
     showDialog(
       context: context,
@@ -75,65 +83,44 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
           child: AlertDialog(
             backgroundColor: Colors.black.withOpacity(0.85),
             insetPadding: EdgeInsets.symmetric(
-              horizontal: screenWidth > 800 ? screenWidth * 0.2 : 20, // 넓은 화면에선 더 넓게 차지
+              horizontal: screenWidth > 800 ? screenWidth * 0.2 : 20,
               vertical: 24,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: Colors.blueAccent.withOpacity(0.5), width: 1),
             ),
-            title: const Row(
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.campaign_rounded, color: Colors.blueAccent),
-                SizedBox(width: 10),
-                Text(
-                  '공지사항',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                const Row(
+                  children: [
+                    Icon(Icons.campaign_rounded, color: Colors.blueAccent),
+                    SizedBox(width: 10),
+                    Text('공지사항', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
                 ),
+                if (authService.isAdmin)
+                  IconButton(
+                    icon: const Icon(Icons.edit_note_rounded, color: Colors.blueAccent),
+                    tooltip: '공지 수정',
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _editNoticeDialog();
+                    },
+                  ),
               ],
             ),
             content: SizedBox(
-              width: double.maxFinite, // 부모의 가로 길이를 다 채움
-              child: const SingleChildScrollView(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '로스트아크 레이드 허브에 오신 걸 환영합니다!',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      '해당 사이트에서는 쉽고 빠르게 보고 싶은 레이드 공략 영상을 시청하실 수 있습니다.\n'
-                      '각 레이드마다 다양한 공략 영상이 준비되어 있으며, 최신 업데이트된 영상들도 지속적으로 추가되고 있습니다.',
-                      style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.6),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Divider(color: Colors.white24, thickness: 1),
-                    ),
-                    Text(
-                      '📢 다음 패치 예정',
-                      style: TextStyle(color: Colors.blueAccent, fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '- 어비스 레이드: 지평의 성당 추가 예정',
-                      style: TextStyle(color: Colors.white, fontSize: 15),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Divider(color: Colors.white24, thickness: 1),
-                    ),
-                    Text(
-                      '문의 사항',
-                      style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '- 이메일: vmfhdirn2@kakao.com\n- 카카오톡: ',
-                      style: TextStyle(color: Colors.white54, fontSize: 14),
+                      _noticeContent,
+                      style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.6),
                     ),
                   ],
                 ),
@@ -150,10 +137,7 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                       await prefs.setInt('notice_last_dismissed', DateTime.now().millisecondsSinceEpoch);
                       if (context.mounted) Navigator.pop(context);
                     },
-                    child: const Text(
-                      '24시간 동안 보지 않기',
-                      style: TextStyle(color: Colors.white38, fontSize: 14),
-                    ),
+                    child: const Text('24시간 동안 보지 않기', style: TextStyle(color: Colors.white38, fontSize: 14)),
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -171,6 +155,48 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
           ),
         );
       },
+    );
+  }
+
+  void _editNoticeDialog() {
+    final controller = TextEditingController(text: _noticeContent);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1C20),
+        title: const Text('공지사항 수정', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          maxLines: 10,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: '공지사항 내용을 입력하세요...',
+            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+            filled: true,
+            fillColor: Colors.black26,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _apiService.updateNotice(controller.text);
+                if (mounted) {
+                  setState(() => _noticeContent = controller.text);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('공지사항이 수정되었습니다.')));
+                  _showNoticeDialog(); // 수정 후 다시 띄움
+                }
+              } catch (e) {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('수정 실패: $e')));
+              }
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
     );
   }
 

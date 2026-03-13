@@ -233,4 +233,37 @@ class ApiService {
       throw Exception('Error fetching playlist items: $e');
     }
   }
+
+  // --- Notice APIs ---
+  Future<String> getNotice() async {
+    try {
+      final response = await _client.get(Uri.parse('$_apiBaseUrl/notice'));
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        return data['content'] ?? '';
+      }
+      return '';
+    } catch (e) {
+      debugPrint('Error fetching notice: $e');
+      return '';
+    }
+  }
+
+  Future<void> updateNotice(String content) async {
+    try {
+      final response = await _client.put(
+        Uri.parse('$_apiBaseUrl/notice'),
+        headers: {
+          'Content-Type': 'application/json',
+          ..._authService.getAuthHeaders()
+        },
+        body: json.encode({'content': content}),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update notice');
+      }
+    } catch (e) {
+      throw Exception('Error updating notice: $e');
+    }
+  }
 }
