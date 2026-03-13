@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:ui'; // For ImageFilter
 import 'package:provider/provider.dart';
 import '../models/raid_video.dart';
 import '../models/playlist_item.dart';
@@ -827,95 +828,209 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSearchAndSortBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '제목, 작성자, 레이드 검색...',
-                prefixIcon: const Icon(Icons.search),
-                isDense: true,
-                contentPadding: const EdgeInsets.all(10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+  Widget _buildGlassContainer({required Widget child, double? width, double borderRadius = 15}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          if (isDark)
+            BoxShadow(
+              color: Colors.blueAccent.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: -5,
             ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark 
+                ? const Color(0xFF1E2228).withOpacity(0.7)
+                : Colors.white.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: Border.all(
+                color: isDark 
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.blueAccent.withOpacity(0.2),
+                width: 1.5,
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                  ? [Colors.white.withOpacity(0.05), Colors.transparent]
+                  : [Colors.white.withOpacity(0.3), Colors.transparent],
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchAndSortBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 15, 20, 5),
+      child: _buildGlassContainer(
+        borderRadius: 12,
+        child: TextField(
+          controller: _searchController,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            hintText: '찾으시는 레이드나 공략 키워드를 입력하세요...',
+            hintStyle: TextStyle(
+              color: (isDark ? Colors.white : Colors.black).withOpacity(0.3),
+              fontSize: 14,
+            ),
+            prefixIcon: Icon(
+              Icons.search_rounded, 
+              color: isDark ? Colors.blueAccent : Colors.blue,
+              size: 22,
+            ),
+            isDense: true,
+            contentPadding: const EdgeInsets.all(15),
+            border: InputBorder.none,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildDropdownFilters() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dropdownBg = isDark ? const Color(0xFF16191D) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         children: [
           Expanded(
             flex: 2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
-              ),
+            child: _buildGlassContainer(
+              borderRadius: 12,
               child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  value: _selectedCategory,
-                  icon: const Icon(Icons.arrow_drop_down),
-                  items: RaidConstants.dropdownCategory.keys.map((String category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category, style: const TextStyle(fontSize: 14)),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        _selectedCategory = newValue;
-                        _selectedRaid = '전체';
-                        _updateGuideKeywordFromDropdown();
-                      });
-                    }
-                  },
+                child: ButtonTheme(
+                  alignedDropdown: true,
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _selectedCategory,
+                    dropdownColor: dropdownBg,
+                    icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? Colors.blueAccent : Colors.blue),
+                    style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w600),
+                    borderRadius: BorderRadius.circular(15),
+                    menuMaxHeight: 400,
+                    items: RaidConstants.dropdownCategory.keys.map((String category) {
+                      final isSelected = _selectedCategory == category;
+                      return DropdownMenuItem<String>(
+                        value: category,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 16, // 높이를 살짝 줄임
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.blueAccent : Colors.transparent,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                category,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.blueAccent : textColor,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedCategory = newValue;
+                          _selectedRaid = '전체';
+                          _updateGuideKeywordFromDropdown();
+                        });
+                      }
+                    },
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 15),
           Expanded(
             flex: 3,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
-              ),
+            child: _buildGlassContainer(
+              borderRadius: 12,
               child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  value: _selectedRaid,
-                  icon: const Icon(Icons.arrow_drop_down),
-                  items: RaidConstants.dropdownCategory[_selectedCategory]!.map((String raid) {
-                    return DropdownMenuItem<String>(
-                      value: raid,
-                      child: Text(raid, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        _selectedRaid = newValue;
-                        _updateGuideKeywordFromDropdown();
-                      });
-                    }
-                  },
+                child: ButtonTheme(
+                  alignedDropdown: true,
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _selectedRaid,
+                    dropdownColor: dropdownBg,
+                    icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? Colors.blueAccent : Colors.blue),
+                    style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w600),
+                    borderRadius: BorderRadius.circular(15),
+                    menuMaxHeight: 400,
+                    items: RaidConstants.dropdownCategory[_selectedCategory]!.map((String raid) {
+                      final isSelected = _selectedRaid == raid;
+                      return DropdownMenuItem<String>(
+                        value: raid,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 16, // 높이를 첫 번째 드롭다운과 동일하게 맞춤
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.blueAccent : Colors.transparent,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                raid,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.blueAccent : textColor,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedRaid = newValue;
+                          _updateGuideKeywordFromDropdown();
+                        });
+                      }
+                    },
+                  ),
                 ),
               ),
             ),
