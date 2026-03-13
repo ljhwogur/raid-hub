@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -39,14 +40,28 @@ class _AdminPostScreenState extends State<AdminPostScreen> {
     }
   }
 
+  Widget _buildCenteredContent(Widget child) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900), // 게시판에 적절한 최대 너비
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF2D3436);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('📢 관리자 소식'),
+        title: Text(
+          '📢 관리자 소식',
+          style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
+        ),
+        iconTheme: IconThemeData(color: textColor),
         actions: [
           if (authService.isAdmin)
             IconButton(
@@ -54,6 +69,7 @@ class _AdminPostScreenState extends State<AdminPostScreen> {
               tooltip: '새 글 작성',
               onPressed: () => _showEditPostDialog(),
             ),
+          const SizedBox(width: 10),
         ],
       ),
       body: Container(
@@ -66,35 +82,44 @@ class _AdminPostScreenState extends State<AdminPostScreen> {
               : [const Color(0xFFF8F9FA), const Color(0xFFE9ECEF)],
           ),
         ),
-        child: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : _posts.isEmpty 
-            ? const Center(child: Text('등록된 소식이 없습니다.', style: TextStyle(color: Colors.white54)))
-            : ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: _posts.length,
-                itemBuilder: (context, index) {
-                  final post = _posts[index];
-                  return _buildPostCard(post, authService.isAdmin);
-                },
-              ),
+        child: _buildCenteredContent(
+          _isLoading 
+            ? const Center(child: CircularProgressIndicator())
+            : _posts.isEmpty 
+              ? Center(child: Text('등록된 소식이 없습니다.', style: TextStyle(color: textColor.withOpacity(0.5))))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: _posts.length,
+                  itemBuilder: (context, index) {
+                    final post = _posts[index];
+                    return _buildPostCard(post, authService.isAdmin);
+                  },
+                ),
+        ),
       ),
     );
   }
 
   Widget _buildPostCard(AdminPost post, bool isAdmin) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF2D3436);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      color: Colors.white.withOpacity(0.05),
+      color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+      elevation: isDark ? 0 : 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
+        side: BorderSide(
+          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05), 
+          width: 1
+        ),
       ),
       child: InkWell(
         onTap: () => _showPostDetail(post, isAdmin),
         borderRadius: BorderRadius.circular(15),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24), // 패딩을 조금 더 늘림
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -104,7 +129,11 @@ class _AdminPostScreenState extends State<AdminPostScreen> {
                   Expanded(
                     child: Text(
                       post.title,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 20, 
+                        fontWeight: FontWeight.bold, 
+                        color: isDark ? Colors.white : const Color(0xFF2D3436)
+                      ),
                     ),
                   ),
                   if (isAdmin)
@@ -122,19 +151,19 @@ class _AdminPostScreenState extends State<AdminPostScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 post.createdAt != null 
-                  ? "${post.createdAt!.year}.${post.createdAt!.month}.${post.createdAt!.day}"
+                  ? "${post.createdAt!.year}년 ${post.createdAt!.month}월 ${post.createdAt!.day}일"
                   : "",
-                style: const TextStyle(color: Colors.white38, fontSize: 12),
+                style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 13),
               ),
-              const SizedBox(height: 12),
+              const Divider(height: 30, thickness: 0.5), // 구분선 추가
               Text(
                 post.content,
-                maxLines: 2,
+                maxLines: 3, // 2줄에서 3줄로 늘림
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 15, height: 1.5),
               ),
             ],
           ),
@@ -144,55 +173,110 @@ class _AdminPostScreenState extends State<AdminPostScreen> {
   }
 
   void _showPostDetail(AdminPost post, bool isAdmin) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        maxChildSize: 0.9,
-        minChildSize: 0.5,
-        builder: (_, controller) => Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1C20),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-            border: Border.all(color: Colors.blueAccent.withOpacity(0.3), width: 1),
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(post.title, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  ),
-                  IconButton(icon: const Icon(Icons.close, color: Colors.white54), onPressed: () => Navigator.pop(context)),
-                ],
+    if (kIsWeb) {
+      // 웹(PC) 환경: 화면 중앙에 다이얼로그로 표시
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800, maxHeight: 800),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A1C20) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.blueAccent.withOpacity(0.3), width: 1),
               ),
-              const Divider(color: Colors.white12, height: 32),
+              child: _buildDetailContent(post, isAdmin, isDialog: true),
+            ),
+          ),
+        ),
+      );
+    } else {
+      // 모바일 환경: 기존대로 바텀 시트 유지
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          builder: (_, controller) => Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A1C20) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+            ),
+            child: _buildDetailContent(post, isAdmin, controller: controller),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildDetailContent(AdminPost post, bool isAdmin, {ScrollController? controller, bool isDialog = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: EdgeInsets.all(isDialog ? 32 : 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
               Expanded(
-                child: SelectionArea(
-                  child: Markdown(
-                    controller: controller,
-                    data: post.content,
-                    styleSheet: MarkdownStyleSheet(
-                      p: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.6),
-                      h1: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                      strong: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
-                    ),
-                    onTapLink: (text, href, title) async {
-                      if (href != null && href.startsWith('http')) {
-                        await launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
-                      }
-                    },
-                  ),
+                child: Text(
+                  post.title, 
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF2D3436), 
+                    fontSize: isDialog ? 28 : 22, 
+                    fontWeight: FontWeight.bold
+                  )
                 ),
+              ),
+              IconButton(
+                icon: Icon(Icons.close, color: isDark ? Colors.white54 : Colors.black54), 
+                onPressed: () => Navigator.pop(context)
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            post.createdAt != null 
+              ? "${post.createdAt!.year}년 ${post.createdAt!.month}월 ${post.createdAt!.day}일 작성됨"
+              : "",
+            style: TextStyle(color: (isDark ? Colors.white : Colors.black).withOpacity(0.4), fontSize: 13),
+          ),
+          const Divider(height: 40, thickness: 1),
+          Expanded(
+            child: SelectionArea(
+              child: Markdown(
+                controller: controller,
+                data: post.content,
+                shrinkWrap: true,
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStyle(
+                    color: isDark ? Colors.white70 : const Color(0xFF2D3436), 
+                    fontSize: 16, 
+                    height: 1.6
+                  ),
+                  h1: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
+                  h2: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+                  strong: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                  listBullet: const TextStyle(color: Colors.blueAccent),
+                  horizontalRuleDecoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: (isDark ? Colors.white : Colors.black).withOpacity(0.1), width: 1)),
+                  ),
+                ),
+                onTapLink: (text, href, title) async {
+                  if (href != null && href.startsWith('http')) {
+                    await launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

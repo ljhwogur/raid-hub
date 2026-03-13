@@ -1,17 +1,8 @@
-# 로스트아크 레이드 허브에 오신 것을 환영합니다!
-
-해당 서비스는 각 레이드에 대한 정보와 공략을 빠르게 확인할 수 있습니다.
-
----
-
-## 다음 패치 예정
-**어비스 레이드 - 지평의 성당** 카테고리 추가 예정
-
----
-
-## 문의
-
-문의는 아래 주소로 보내주세요.
-
-- 이메일: [vmfhdirn2@kakao.com](mailto:vmfhdirn2@kakao.com)
-- 카카오톡:
+vmfhdirn2@raid-hub:~/raid-hub/raid_hub_backend$ git pull origin main
+From https://github.com/ljhwogur/raid-hub
+ * branch            main       -> FETCH_HEAD
+Updating 12fdd3d..9a342ca
+error: Your local changes to the following files would be overwritten by merge:
+	raid_hub_backend/src/main/java/com/example/raid_hub/security/SecurityConfig.java
+Please commit your changes or stash them before you merge.
+Aborting
