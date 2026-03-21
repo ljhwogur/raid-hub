@@ -8,10 +8,10 @@ import 'package:url_launcher/url_launcher.dart'; // Add url_launcher
 import '../providers/theme_provider.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart'; // Add ApiService import
-import 'login_screen.dart';
-import 'home_screen.dart';
-import 'admin_post_screen.dart'; // Add AdminPostScreen import
-import 'admin_dashboard_screen.dart'; // Add AdminDashboardScreen import
+import 'login_screen.dart' deferred as login_screen;
+import 'home_screen.dart' deferred as home_screen;
+import 'admin_post_screen.dart' deferred as admin_post_screen; // Add AdminPostScreen import
+import 'admin_dashboard_screen.dart' deferred as admin_dashboard_screen; // Add AdminDashboardScreen import
 
 /// [LandingScreen]
 /// 앱의 첫인상을 결정하는 세련된 랜딩 페이지입니다.
@@ -37,6 +37,22 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
 
   final ApiService _apiService = ApiService();
   String _noticeContent = '';
+
+  Future<void> _pushDeferredPage({
+    required Future<void> Function() loadLibrary,
+    required Widget Function() builder,
+    bool replace = false,
+  }) async {
+    await loadLibrary();
+    if (!mounted) return;
+
+    final route = MaterialPageRoute(builder: (_) => builder());
+    if (replace) {
+      Navigator.pushReplacement(context, route);
+      return;
+    }
+    Navigator.push(context, route);
+  }
 
   @override
   void initState() {
@@ -334,9 +350,10 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                               icon: Icons.play_arrow_rounded,
                               primaryColor: Colors.blueAccent,
                               width: isWide ? 380 : 320,
-                              onTap: () => Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (_) => const HomePage(initialIndex: 0)),
+                              onTap: () => _pushDeferredPage(
+                                loadLibrary: home_screen.loadLibrary,
+                                builder: () => home_screen.HomePage(initialIndex: 0),
+                                replace: true,
                               ),
                             ),
                             _buildGlassButton(
@@ -346,9 +363,10 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                               icon: Icons.auto_awesome_motion_rounded,
                               primaryColor: Colors.purpleAccent,
                               width: isWide ? 380 : 320,
-                              onTap: () => Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (_) => const HomePage(initialIndex: 1)),
+                              onTap: () => _pushDeferredPage(
+                                loadLibrary: home_screen.loadLibrary,
+                                builder: () => home_screen.HomePage(initialIndex: 1),
+                                replace: true,
                               ),
                             ),
                             _buildGlassButton(
@@ -358,9 +376,9 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                               icon: Icons.notifications_active_rounded,
                               primaryColor: Colors.orangeAccent,
                               width: isWide ? 380 : 320,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const AdminPostScreen()),
+                              onTap: () => _pushDeferredPage(
+                                loadLibrary: admin_post_screen.loadLibrary,
+                                builder: () => admin_post_screen.AdminPostScreen(),
                               ),
                             ),
                           ],
@@ -399,7 +417,10 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                 _buildHeaderIcon(
                   icon: Icons.bar_chart_rounded,
                   tooltip: '통계 대시보드',
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
+                  onPressed: () => _pushDeferredPage(
+                    loadLibrary: admin_dashboard_screen.loadLibrary,
+                    builder: () => admin_dashboard_screen.AdminDashboardScreen(),
+                  ),
                 ),
                 Container(width: 1, height: 20, color: Colors.white24),
                 _buildHeaderIcon(
@@ -416,7 +437,10 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
                   if (authService.isAuthenticated) {
                     authService.logout();
                   } else {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                    _pushDeferredPage(
+                      loadLibrary: login_screen.loadLibrary,
+                      builder: () => login_screen.LoginScreen(),
+                    );
                   }
                 },
               ),

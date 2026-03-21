@@ -4,7 +4,7 @@ import '../models/raid_video.dart';
 import '../models/playlist_item.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart'; // Add ApiService import
-import '../screens/video_player_screen.dart';
+import '../screens/video_player_screen.dart' deferred as video_player_screen;
 
 /// [VideoCard]
 /// DB에 저장된 개별 공략 영상(RaidVideo) 정보를 표시하는 카드 위젯입니다.
@@ -39,7 +39,7 @@ class VideoCard extends StatelessWidget {
       child: Stack(
         children: [
           InkWell(
-            onTap: () {
+            onTap: () async {
               // 활동 로그 기록
               apiService.logActivity(
                 activityType: 'VIDEO_CLICK',
@@ -48,10 +48,12 @@ class VideoCard extends StatelessWidget {
 
               final videoId = _getYouTubeVideoId(video.youtubeUrl);
               if (videoId != null) {
+                await video_player_screen.loadLibrary();
+                if (!context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => VideoPlayerScreen(videoId: videoId),
+                    builder: (context) => video_player_screen.VideoPlayerScreen(videoId: videoId),
                   ),
                 );
               }
@@ -165,18 +167,20 @@ class PlaylistCard extends StatelessWidget {
       child: Stack(
         children: [
           InkWell(
-            onTap: () {
+            onTap: () async {
               // 활동 로그 기록
               apiService.logActivity(
                 activityType: 'VIDEO_CLICK',
                 targetTitle: item.title,
               );
 
+              await video_player_screen.loadLibrary();
+              if (!context.mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
-                      VideoPlayerScreen(videoId: item.videoId),
+                      video_player_screen.VideoPlayerScreen(videoId: item.videoId),
                 ),
               );
             },

@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add flutter_dotenv
 import 'services/auth_service.dart';
 import 'providers/theme_provider.dart';
 import 'screens/landing_screen.dart'; // Import LandingScreen
+import 'screens/splash_screen.dart';
 
 // Custom ScrollBehavior to allow mouse dragging on web/desktop
 class AppScrollBehavior extends MaterialScrollBehavior {
@@ -20,23 +21,65 @@ class AppScrollBehavior extends MaterialScrollBehavior {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env"); // Initialize dotenv
-  
-  final authService = AuthService();
-  await authService.initialize();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: authService),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ],
-      child: const RaidHubApp(),
-    ),
-  );
+  runApp(const RaidHubApp());
 }
 
-class RaidHubApp extends StatelessWidget {
+class RaidHubApp extends StatefulWidget {
   const RaidHubApp({super.key});
+
+  @override
+  State<RaidHubApp> createState() => _RaidHubAppState();
+}
+
+class _RaidHubAppState extends State<RaidHubApp> {
+  bool _isInitialized = false;
+  late AuthService _authService;
+  late ThemeProvider _themeProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      _authService = AuthService();
+      await _authService.initialize();
+      _themeProvider = ThemeProvider();
+
+      if (!mounted) return;
+      setState(() => _isInitialized = true);
+    } catch (e) {
+      debugPrint('App initialization error: $e');
+      if (mounted) setState(() => _isInitialized = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return MaterialApp(
+        home: SplashScreen(
+          authService: _authService,
+          themeProvider: _themeProvider,
+        ),
+      );
+    }
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _authService),
+        ChangeNotifierProvider.value(value: _themeProvider),
+      ],
+      child: const RaidHubAppContent(),
+    );
+  }
+}
+
+class RaidHubAppContent extends StatelessWidget {
+  const RaidHubAppContent({super.key});
 
   static const double _compactWidthBreakpoint = 512;
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'dart:async'; // Add Timer import
 import 'dart:ui'; // For ImageFilter
 import 'package:provider/provider.dart';
@@ -45,8 +45,12 @@ class _HomePageState extends State<HomePage> {
   List<String> _blockedVideoIds = [];
   List<CheatSheet> _allCheatSheets = [];
   List<CheatSheet> _filteredCheatSheets = [];
+  List<RaidVideo> _raidVideos = [];
+  List<PlaylistItem> _playlistItems = [];
 
   bool _isLoading = true;
+  bool _playlistLoaded = false;
+  bool _isPlaylistLoading = false;
 
   @override
   void initState() {
@@ -82,43 +86,82 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      List<Future> futures = [
+      final List<Future<dynamic>> futures = [
         _apiService.getVideos(),
         _apiService.getBlockedVideoIds(),
         _apiService.getCheatSheets()
       ];
-      for (final playlistId in RaidConstants.playlistIds) {
-        futures.add(_apiService.getPlaylistItems(playlistId));
-      }
 
       final results = await Future.wait(futures);
 
       if (mounted) {
         setState(() {
-          final raidVideos = results[0] as List<RaidVideo>;
+          _raidVideos = results[0] as List<RaidVideo>;
           _blockedVideoIds = results[1] as List<String>;
           _allCheatSheets = results[2] as List<CheatSheet>;
-
-          final List<PlaylistItem> playlistItems = [];
-          for (int i = 0; i < RaidConstants.playlistIds.length; i++) {
-            final items = results[i + 3] as List<PlaylistItem>;
-            final playlistId = RaidConstants.playlistIds[i];
-            playlistItems.addAll(items.map((item) => item.copyWith(playlistId: playlistId)));
-          }
-
-          _blockedContent = playlistItems.where((item) => _blockedVideoIds.contains(item.videoId)).toList();
-          final filteredPlaylistItems = playlistItems.where((item) => !_blockedVideoIds.contains(item.videoId)).toList();
-          _allContent = [...raidVideos, ...filteredPlaylistItems];
+          _playlistItems = [];
+          _playlistLoaded = false;
+          _blockedContent = [];
+          _allContent = [..._raidVideos];
           _isLoading = false;
         });
+      }
+
+      if (_currentIndex == 0) {
+        _loadPlaylistsIfNeeded();
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _loadPlaylistsIfNeeded({bool force = false}) async {
+    if (_isPlaylistLoading) return;
+    if (_playlistLoaded && !force) return;
+
+    if (mounted) {
+      setState(() => _isPlaylistLoading = true);
+    } else {
+      _isPlaylistLoading = true;
+    }
+    try {
+      final futures = RaidConstants.playlistIds
+          .map((playlistId) => _apiService.getPlaylistItems(playlistId))
+          .toList();
+      final results = await Future.wait(futures);
+
+      final List<PlaylistItem> playlistItems = [];
+      for (int i = 0; i < RaidConstants.playlistIds.length; i++) {
+        final items = results[i];
+        final playlistId = RaidConstants.playlistIds[i];
+        playlistItems.addAll(items.map((item) => item.copyWith(playlistId: playlistId)));
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _playlistItems = playlistItems;
+        _playlistLoaded = true;
+        _blockedContent = _playlistItems.where((item) => _blockedVideoIds.contains(item.videoId)).toList();
+        final filteredPlaylistItems = _playlistItems.where((item) => !_blockedVideoIds.contains(item.videoId)).toList();
+        _allContent = [..._raidVideos, ...filteredPlaylistItems];
+      });
+    } catch (e) {
+      // Keep existing content if playlist fetch fails.
+      debugPrint('Playlist lazy-load failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isPlaylistLoading = false);
+      } else {
+        _isPlaylistLoading = false;
+      }
+    }
+  }
+
   Future<void> _refreshVideos() async {
     await _loadData();
+    if (_currentIndex == 0) {
+      await _loadPlaylistsIfNeeded(force: true);
+    }
   }
 
   bool _checkKeywordMatch(dynamic item, String keyword) {
@@ -524,9 +567,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isLoading && _allContent.isNotEmpty) _applyFilters();
+    if (!_isLoading && (_allContent.isNotEmpty || _allCheatSheets.isNotEmpty)) _applyFilters();
     final authService = Provider.of<AuthService>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final isVideoTabLoading = _currentIndex == 0 && (_isLoading || _isPlaylistLoading);
+    final isCheatSheetTabLoading = _currentIndex == 1 && _isLoading;
 
     return Scaffold(
       extendBodyBehindAppBar: false,
@@ -596,9 +641,9 @@ class _HomePageState extends State<HomePage> {
               _buildDropdownFilters(),
               const SizedBox(height: 10),
               Expanded(
-                child: _isLoading 
+                child: (isVideoTabLoading || isCheatSheetTabLoading)
                   ? _buildSkeletonGrid() 
-                  : (_allContent.isEmpty)
+                  : ((_currentIndex == 0 ? _allContent.isEmpty : _allCheatSheets.isEmpty))
                     ? _buildErrorView()
                     : (_currentIndex == 0 ? _buildVideosContent() : _buildCheatSheetsContent()),
                     ),
@@ -607,7 +652,12 @@ class _HomePageState extends State<HomePage> {
                     ),      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+          if (index == 0) {
+            _loadPlaylistsIfNeeded();
+          }
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.videocam), label: '공략 영상'),
           BottomNavigationBarItem(icon: Icon(Icons.description), label: '컨닝 페이퍼'),
