@@ -457,7 +457,7 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
         const Icon(Icons.keyboard_arrow_down, color: Colors.white38, size: 30),
         const SizedBox(height: 10),
         Text(
-          '문의: vmfhdirn2@kakao.com',
+          '문의: ljhwogur1@gmail.com',
           style: TextStyle(
             fontSize: isWide ? 13 : 11,
             color: Colors.white.withValues(alpha: 0.5),
