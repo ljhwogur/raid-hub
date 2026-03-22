@@ -52,10 +52,10 @@ public class CheatSheetService {
       throw new IllegalArgumentException("허용되지 않는 파일 확장자입니다. (jpg, jpeg, png, gif, webp만 가능)");
     }
 
-    String contentType = file.getContentType();
-    if (contentType == null || !contentType.startsWith("image/")) {
-      throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
-    }
+    // String contentType = file.getContentType();
+    // if (contentType == null || !contentType.startsWith("image/")) {
+    //   throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
+    // }
 
     // 1. 파일 이름 생성 (중복 방지)
     String newFilename = UUID.randomUUID().toString() + extension;
