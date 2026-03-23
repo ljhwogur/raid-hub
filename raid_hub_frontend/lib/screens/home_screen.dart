@@ -423,7 +423,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return ListView(
-      padding: const EdgeInsets.only(top: 5, bottom: 10),
+      padding: const EdgeInsets.only(top: 8, bottom: 10),
       children: sections,
     );
   }
@@ -701,7 +701,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return ListView(
-      padding: const EdgeInsets.only(top: 5, bottom: 10),
+      padding: const EdgeInsets.only(top: 8, bottom: 10),
       children: sections,
     );
   }
@@ -1001,7 +1001,7 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         children: [
           Expanded(
-            flex: 2,
+            flex: 1,
             child: _buildGlassContainer(
               borderRadius: 12,
               child: DropdownButtonHideUnderline(
@@ -1059,7 +1059,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(width: 15),
           Expanded(
-            flex: 3,
+            flex: 1,
             child: _buildGlassContainer(
               borderRadius: 12,
               child: DropdownButtonHideUnderline(
