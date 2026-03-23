@@ -6,6 +6,14 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart'; // Add ApiService import
 import '../screens/video_player_screen.dart' deferred as video_player_screen;
 
+String _formatPublishedDate(String rawDate) {
+  final parsed = DateTime.tryParse(rawDate);
+  if (parsed == null) return rawDate;
+
+  final localDate = parsed.toLocal();
+  return '${localDate.year}년 ${localDate.month}월 ${localDate.day}일';
+}
+
 /// [VideoCard]
 /// DB에 저장된 개별 공략 영상(RaidVideo) 정보를 표시하는 카드 위젯입니다.
 /// 관리자가 수동으로 등록한 영상임을 나타내는 UI 스타일이 적용되어 있습니다.
@@ -79,7 +87,7 @@ class VideoCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -219,22 +227,29 @@ class PlaylistCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          item.channelTitle,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.publishedAt,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item.channelTitle,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              _formatPublishedDate(item.publishedAt),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
+                          ],
                         ),
                       ],
                     ),
