@@ -394,21 +394,35 @@ class _HomePageState extends State<HomePage> {
       return _buildCheatSheetsGrid();
     }
 
-    List<Widget> sections = RaidConstants.dropdownCategory.keys
-          .where((cat) => cat != '전체 레이드')
-          .map((category) => _buildCheatSheetSection(category))
-          .toList();
+    final validCategories = RaidConstants.dropdownCategory.keys
+        .where((cat) => cat != '전체 레이드')
+        .toList();
+
+    List<Widget> sections = [];
+    bool isFirstValidSection = true;
+
+    for (var i = 0; i < validCategories.length; i++) {
+      final category = validCategories[i];
+      final sectionWidget = _buildCheatSheetSection(category, isFirst: isFirstValidSection);
+      if (sectionWidget is! SizedBox) {
+        sections.add(sectionWidget);
+        isFirstValidSection = false;
+      }
+    }
     
-    sections.add(_buildCheatSheetSection('로아 유용한 팁'));
+    final tipsSectionWidget = _buildCheatSheetSection('로아 유용한 팁', isFirst: isFirstValidSection);
+    if (tipsSectionWidget is! SizedBox) {
+      sections.add(tipsSectionWidget);
+    }
 
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.only(top: 5, bottom: 10),
       children: sections,
     );
   }
 
   // 컨닝페이퍼 전용 가로 스크롤 섹션 빌더
-  Widget _buildCheatSheetSection(String categoryName) {
+  Widget _buildCheatSheetSection(String categoryName, {bool isFirst = false}) {
     final List<String> actualRaids;
     if (RaidConstants.dropdownCategory.containsKey(categoryName)) {
       final List<String> subRaids = RaidConstants.dropdownCategory[categoryName] ?? [];
@@ -473,7 +487,7 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
+          padding: EdgeInsets.fromLTRB(20, isFirst ? 0 : 35, 20, 15),
           child: Row(
             children: [
               Container(
@@ -639,7 +653,6 @@ class _HomePageState extends State<HomePage> {
             children: [
               _buildSearchAndSortBar(),
               _buildDropdownFilters(),
-              const SizedBox(height: 10),
               Expanded(
                 child: (isVideoTabLoading || isCheatSheetTabLoading)
                   ? _buildSkeletonGrid() 
@@ -682,22 +695,36 @@ class _HomePageState extends State<HomePage> {
     }
 
     // 초기 상태 -> 넷플릭스 스타일 가로 섹션 뷰
-    List<Widget> sections = RaidConstants.dropdownCategory.keys
-          .where((cat) => cat != '전체 레이드') // '전체 레이드'는 섹션에서 제외
-          .map((category) => _buildNetflixSection(category))
-          .toList();
+    final validCategories = RaidConstants.dropdownCategory.keys
+        .where((cat) => cat != '전체 레이드')
+        .toList();
+
+    List<Widget> sections = [];
+    bool isFirstValidSection = true;
+
+    for (var i = 0; i < validCategories.length; i++) {
+      final category = validCategories[i];
+      final sectionWidget = _buildNetflixSection(category, isFirst: isFirstValidSection);
+      if (sectionWidget is! SizedBox) {
+        sections.add(sectionWidget);
+        isFirstValidSection = false; // 첫 번째 유효한 섹션이 렌더링된 이후로는 false로 설정
+      }
+    }
     
     // '로아 유용한 팁' 섹션을 맨 아래에 명시적으로 추가
-    sections.add(_buildNetflixSection('로아 유용한 팁'));
+    final tipsSectionWidget = _buildNetflixSection('로아 유용한 팁', isFirst: isFirstValidSection);
+    if (tipsSectionWidget is! SizedBox) {
+      sections.add(tipsSectionWidget);
+    }
 
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.only(top: 5, bottom: 10),
       children: sections,
     );
   }
 
   // 가로 스크롤 섹션 빌더
-  Widget _buildNetflixSection(String categoryName) {
+  Widget _buildNetflixSection(String categoryName, {bool isFirst = false}) {
     // 해당 카테고리에 속하는 아이템들 필터링
     final List<String> actualRaids;
     
@@ -765,7 +792,7 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 25, 20, 15),
+          padding: EdgeInsets.fromLTRB(20, isFirst ? 0 : 35, 20, 15),
           child: Row(
             children: [
               Container(
