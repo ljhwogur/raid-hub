@@ -210,9 +210,12 @@ class _HomePageState extends State<HomePage> {
     }
 
     bool isAfter2MakDate = videoDate != null && !videoDate.isBefore(DateTime(2024, 9, 25));
-    if (title.contains('아브렐슈드') || raidName.contains('아브렐슈드') || title.contains('2막') || raidName.contains('2막')) {
-      if (isAfter2MakDate) { if (!itemActs.contains('2막')) itemActs.add('2막'); } 
-      else { itemActs.remove('2막'); }
+    if (title.contains('아브렐슈드') || raidName.contains('아브렐슈드')) {
+      if (isAfter2MakDate) { 
+        if (!itemActs.contains('2막')) itemActs.add('2막'); 
+      } else { 
+        itemActs.remove('2막'); 
+      }
     }
 
     bool isAfter4MakDate = videoDate != null && !videoDate.isBefore(DateTime(2025, 8, 20));
@@ -242,6 +245,34 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  bool _checkCheatSheetMatch(CheatSheet cs, String keyword) {
+    if (keyword == '전체') return true;
+    
+    // 컨닝페이퍼는 수동 등록이므로 키워드('2막', '나로크') 유무로 판단
+    bool has2MakKeywords = cs.title.contains('2막') || cs.raidName.contains('2막') || 
+                           cs.title.contains('나로크') || cs.raidName.contains('나로크');
+    bool hasBrelName = cs.title.contains('아브렐슈드') || cs.raidName.contains('아브렐슈드');
+
+    if (keyword == '로아 유용한 팁') {
+      final otherKeywords = RaidConstants.guideKeywords.where((k) => k != '전체' && k != '로아 유용한 팁').toList();
+      return !otherKeywords.any((k) => cs.raidName.contains(k) || cs.title.contains(k));
+    }
+
+    final term = RaidConstants.keywordMapping[keyword] ?? keyword;
+
+    // 1. 군단장 레이드 '아브렐슈드' 필터링 시
+    if (keyword == '아브렐슈드') {
+      return hasBrelName && !has2MakKeywords;
+    }
+    
+    // 2. 카제로스 레이드 '2막' 필터링 시
+    if (keyword == '2막') {
+      return has2MakKeywords;
+    }
+
+    return cs.raidName.contains(term) || cs.title.contains(term);
+  }
+
   void _applyFilters() {
     List<dynamic> filteredVideos = _allContent.where((item) {
       String title = (item is RaidVideo) ? item.title : (item as PlaylistItem).title;
@@ -256,11 +287,18 @@ class _HomePageState extends State<HomePage> {
           if (raid.contains('(')) {
             RegExp regex = RegExp(r'\((.*?)\)');
             String act = regex.firstMatch(raid)?.group(1) ?? '';
-            String realRaid = raid.split(')').last;
-            return _checkKeywordMatch(item, act) || title.contains(realRaid) || raidName.contains(realRaid);
+            return _checkKeywordMatch(item, act);
           }
           return _checkKeywordMatch(item, raid);
         });
+        
+        // 대분류가 카제로스 레이드인 경우, 과거 아브렐슈드 영상은 추가로 차단
+        if (_selectedCategory == '카제로스 레이드' && matchesCategory) {
+          DateTime? videoDate = (item is PlaylistItem) ? DateTime.tryParse(item.publishedAt) : (item is RaidVideo ? item.createdAt : null);
+          bool isBrel = title.contains('아브렐슈드') || raidName.contains('아브렐슈드');
+          bool isBefore2Mak = videoDate != null && videoDate.isBefore(DateTime(2024, 9, 25));
+          if (isBrel && isBefore2Mak) return false;
+        }
       }
 
       bool matchesKeyword = _checkKeywordMatch(item, _selectedGuideKeyword);
@@ -272,26 +310,20 @@ class _HomePageState extends State<HomePage> {
       return matchesCategory && matchesKeyword && matchesSearch;
     }).toList();
 
-    // 1순위: 드롭다운 카테고리 순서 기반 정렬, 2순위: 최신순 (기본값)
+    // ... (sorting logic)
     filteredVideos.sort((a, b) {
         List<String> currentRaids = RaidConstants.dropdownCategory[_selectedCategory] ?? [];
         if (currentRaids.isEmpty) currentRaids = RaidConstants.dropdownCategory['군단장 레이드']!;
 
         int getRaidIndex(dynamic item) {
-          String title = (item is RaidVideo) ? item.title : (item as PlaylistItem).title;
-          String raidName = (item is RaidVideo) ? item.raidName : '';
-
           for (int i = 0; i < currentRaids.length; i++) {
             String raid = currentRaids[i];
             if (raid == '전체') continue;
             
             if (raid.contains('(')) {
               String act = RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? '';
-              String realRaid = raid.split(')').last;
-              if (title.contains(act) || title.contains(realRaid) || raidName.contains(act) || raidName.contains(realRaid)) {
-                return i;
-              }
-            } else if (title.contains(raid) || raidName.contains(raid)) {
+              if (_checkKeywordMatch(item, act)) return i;
+            } else if (_checkKeywordMatch(item, raid)) {
               return i;
             }
           }
@@ -300,10 +332,7 @@ class _HomePageState extends State<HomePage> {
 
         int indexA = getRaidIndex(a);
         int indexB = getRaidIndex(b);
-
-        if (indexA != indexB) {
-          return indexA.compareTo(indexB);
-        }
+        if (indexA != indexB) return indexA.compareTo(indexB);
 
         DateTime dateA = (a is RaidVideo) ? (a.createdAt ?? DateTime(2000)) : DateTime.tryParse((a as PlaylistItem).publishedAt) ?? DateTime(2000);
         DateTime dateB = (b is RaidVideo) ? (b.createdAt ?? DateTime(2000)) : DateTime.tryParse((b as PlaylistItem).publishedAt) ?? DateTime(2000);
@@ -318,22 +347,11 @@ class _HomePageState extends State<HomePage> {
         List<String> actualRaids = subRaids.where((r) => r != '전체').toList();
         matchesCategory = actualRaids.any((raid) {
            String term = raid.contains('(') ? RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? raid : raid;
-           String realRaid = raid.contains(')') ? raid.split(')').last : raid;
-           return cs.raidName.contains(term) || cs.title.contains(term) || cs.raidName.contains(realRaid) || cs.title.contains(realRaid);
+           return _checkCheatSheetMatch(cs, term);
         });
       }
 
-      bool matchesKeyword = false;
-      if (_selectedGuideKeyword == '전체') {
-        matchesKeyword = true;
-      } else if (_selectedGuideKeyword == '로아 유용한 팁') {
-        final keywords = RaidConstants.guideKeywords.where((k) => k != '전체' && k != '로아 유용한 팁').toList();
-        matchesKeyword = !keywords.any((k) => cs.raidName.contains(k) || cs.title.contains(k));
-      } else {
-        final term = RaidConstants.keywordMapping[_selectedGuideKeyword] ?? _selectedGuideKeyword;
-        matchesKeyword = cs.raidName.contains(term) || cs.title.contains(term);
-      }
-
+      bool matchesKeyword = _checkCheatSheetMatch(cs, _selectedGuideKeyword);
       bool matchesSearch = _searchQuery.isEmpty || 
           cs.title.toLowerCase().contains(_searchQuery.toLowerCase()) || 
           cs.raidName.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -351,26 +369,15 @@ class _HomePageState extends State<HomePage> {
             String raid = currentRaids[i];
             if (raid == '전체') continue;
             
-            if (raid.contains('(')) {
-              String term = RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? raid;
-              String realRaid = raid.split(')').last;
-              if (cs.raidName.contains(term) || cs.title.contains(term) || 
-                  cs.raidName.contains(realRaid) || cs.title.contains(realRaid)) {
-                return i;
-              }
-            } else if (cs.raidName.contains(raid) || cs.title.contains(raid)) {
-              return i;
-            }
+            String term = raid.contains('(') ? RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? raid : raid;
+            if (_checkCheatSheetMatch(cs, term)) return i;
           }
           return 999;
         }
 
         int indexA = getRaidIndex(a);
         int indexB = getRaidIndex(b);
-
-        if (indexA != indexB) {
-          return indexA.compareTo(indexB);
-        }
+        if (indexA != indexB) return indexA.compareTo(indexB);
 
         return (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000));
     });
@@ -433,51 +440,27 @@ class _HomePageState extends State<HomePage> {
     
     final sectionItems = _allCheatSheets.where((cs) {
       return actualRaids.any((raid) {
-        if (raid.contains('(')) {
-          String term = RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? raid;
-          String realRaid = raid.split(')').last;
-          return cs.raidName.contains(term) || cs.title.contains(term) || 
-                 cs.raidName.contains(realRaid) || cs.title.contains(realRaid);
-        }
-        // 로아 유용한 팁(기타) 처리
-        if (categoryName == '로아 유용한 팁') {
-          final otherKeywords = RaidConstants.guideKeywords.where((k) => k != '전체' && k != '로아 유용한 팁').toList();
-          return !otherKeywords.any((k) => cs.raidName.contains(k) || cs.title.contains(k));
-        }
-        return cs.raidName.contains(raid) || cs.title.contains(raid);
+        String term = raid.contains('(') ? RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? raid : raid;
+        return _checkCheatSheetMatch(cs, term);
       });
     }).toList();
 
     if (sectionItems.isEmpty) return const SizedBox.shrink();
 
-    // 정렬 로직: 1순위 - 드롭다운 레이드 순서, 2순위 - 최신순
+    // 정렬 로직
     sectionItems.sort((a, b) {
       int getRaidIndex(CheatSheet cs) {
         for (int i = 0; i < actualRaids.length; i++) {
           String raid = actualRaids[i];
           if (raid == '전체') continue;
-          
-          if (raid.contains('(')) {
-            String term = RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? raid;
-            String realRaid = raid.split(')').last;
-            if (cs.raidName.contains(term) || cs.title.contains(term) || 
-                cs.raidName.contains(realRaid) || cs.title.contains(realRaid)) {
-              return i;
-            }
-          } else if (cs.raidName.contains(raid) || cs.title.contains(raid)) {
-            return i;
-          }
+          String term = raid.contains('(') ? RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? raid : raid;
+          if (_checkCheatSheetMatch(cs, term)) return i;
         }
         return 999;
       }
-
       int indexA = getRaidIndex(a);
       int indexB = getRaidIndex(b);
-
-      if (indexA != indexB) {
-        return indexA.compareTo(indexB);
-      }
-
+      if (indexA != indexB) return indexA.compareTo(indexB);
       return (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000));
     });
 
@@ -741,10 +724,7 @@ class _HomePageState extends State<HomePage> {
       return actualRaids.any((raid) {
         if (raid.contains('(')) {
           String act = RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? '';
-          String realRaid = raid.split(')').last;
-          return _checkKeywordMatch(item, act) || 
-                 (item is RaidVideo && item.title.contains(realRaid)) || 
-                 (item is PlaylistItem && item.title.contains(realRaid));
+          return _checkKeywordMatch(item, act);
         }
         return _checkKeywordMatch(item, raid);
       });
@@ -760,10 +740,7 @@ class _HomePageState extends State<HomePage> {
           String raid = actualRaids[i];
           if (raid.contains('(')) {
             String act = RegExp(r'\((.*?)\)').firstMatch(raid)?.group(1) ?? '';
-            String realRaid = raid.split(')').last;
-            if (_checkKeywordMatch(item, act) || 
-                (item is RaidVideo && item.title.contains(realRaid)) || 
-                (item is PlaylistItem && item.title.contains(realRaid))) {
+            if (_checkKeywordMatch(item, act)) {
               return i;
             }
           } else if (_checkKeywordMatch(item, raid)) {
