@@ -1,0 +1,159 @@
+version: "2.0"
+screen:
+  name: 홈 화면
+  route: /
+  description: "메인 네비게이션이 있는 레이드 공략 가이드 화면"
+
+data_requirements:
+  - resource: raid_videos
+    needs: [id, title, youtube_url, uploader_name, raid_name, difficulty, gate]
+    source: "ApiService.getVideos()"
+
+  - resource: cheat_sheets
+    needs: [id, title, raid_name, gate, uploader_name, image_url, created_at]
+    source: "ApiService.getCheatSheets()"
+
+  - resource: blocked_videos
+    needs: [video_id]
+    source: "ApiService.getBlockedVideoIds()"
+
+components:
+  - id: navigation_bar
+    type: BottomNavigationBar
+    items:
+      - id: guides
+        label: "공략"
+        icon: book
+      - id: videos
+        label: "영상"
+        icon: play_circle
+      - id: cheatsheets
+        label: "컨닝"
+        icon: description
+      - id: admin
+        label: "관리"
+        icon: admin_panel_settings
+
+  - id: filter_section
+    type: Row
+    children:
+      - id: guide_filter
+        type: DropdownButton
+        options: [전체, 애벤, 발탄, 카멘, 에키드나, 하드, 헬, 나이트메어]
+        default: "전체"
+
+      - id: category_filter
+        type: DropdownButton
+        options: [전체 레이드, 노말, 하드, 헬, 나이트메어]
+        default: "전체 레이드"
+
+      - id: raid_filter
+        type: DropdownButton
+        options: [전체]
+        default: "전체"
+
+  - id: search_bar
+    type: TextField
+    placeholder: "공략 검색..."
+    events:
+      on_change: _searchQuery
+      debounce: 500ms
+    features:
+      - logs_search_activity: "2글자 이상 입력 시"
+
+  - id: content_area
+    type: ConditionalContent
+    conditions:
+      - when: _selectedIndex == 0 (guides)
+        show: GuideList
+      - when: _selectedIndex == 1 (videos)
+        show: VideoGrid
+      - when: _selectedIndex == 2 (cheatsheets)
+        show: CheatSheetGrid
+
+  - id: video_grid
+    type: Grid
+    columns: 2 (responsive)
+    gap: 16
+    children:
+      - id: video_card
+        component: VideoCard
+        props: { video: "item" }
+        features:
+          - click: logs VIDEO_CLICK activity
+          - block: "차단" button (admin only)
+
+  - id: cheatsheet_grid
+    type: Grid
+    columns: 2 (responsive)
+    gap: 16
+    children:
+      - id: cheatsheet_card
+        component: CheatSheetCard
+        props: { cheatSheet: "item" }
+        features:
+          - click: logs CHEATSHEET_CLICK activity
+          - image: displays uploaded image
+
+  - id: loading_skeleton
+    component: SkeletonUI
+    shows_when: _isLoading
+
+  - id: refresh_button
+    type: FloatingActionButton
+    icon: refresh
+    action: _loadData
+
+state_management:
+  type: StatefulWidget
+  state_variables:
+    - _currentIndex: int
+      description: "네비게이션 인덱스"
+      initial: widget.initialIndex
+    - _allContent: List<dynamic>
+      description: "전체 컨텐츠"
+    - _filteredContent: List<dynamic>
+      description: "필터링된 컨텐츠"
+    - _blockedContent: List<dynamic>
+      description: "차단된 컨텐츠"
+    - _blockedVideoIds: List<String>
+      description: "차단된 비디오 ID 목록"
+    - _allCheatSheets: List<CheatSheet>
+    - _filteredCheatSheets: List<CheatSheet>
+    - _raidVideos: List<RaidVideo>
+    - _playlistItems: List<PlaylistItem>
+    - _isLoading: bool
+    - _playlistLoaded: bool
+    - _isPlaylistLoading: bool
+
+  state_flow:
+    - initState:
+      - _currentIndex = widget.initialIndex
+      - _loadData() 호출
+    - _loadData:
+      - ApiService.getVideos() 병렬 호출
+      - ApiService.getBlockedVideoIds() 호출
+      - ApiService.getCheatSheets() 호출
+      - _allContent에 저장
+      - _filterContent() 호출
+
+user_flows:
+  - navigation:
+    - 탭 클릭 시 해당 컨텐츠 표시
+    - 검색어 입력 시 실시간 필터링
+
+  - search:
+    - 검색어 입력 (debounce 500ms)
+    - 2글자 이상일 때만 로그 기록
+
+  - filtering:
+    - 가이드 키워드 필터 (_selectedGuideKeyword)
+    - 레이드 필터 (_selectedCategory, _selectedRaid)
+
+  - admin_actions:
+    - 비디오 차단/해제 버튼 (admin 권한일 때)
+
+_reverse_meta:
+  source: "raid_hub_frontend/lib/screens/home_screen.dart"
+  extracted_at: "2026-03-23"
+  confidence: 0.80

@@ -1,0 +1,614 @@
+version: "2.0"
+description: "RaidHub API 엔드포인트 (역추출됨)"
+extracted_at: "2026-03-23"
+confidence: 0.85
+
+base_url: /api
+
+authentication:
+  type: session_based
+  cookie_required: true
+  roles: [USER, ADMIN]
+
+endpoints:
+  # ============================================
+  # User Management
+  # ============================================
+  get_current_user:
+    method: GET
+    path: /users/me
+    controller: UserController
+    description: "현재 로그인한 사용자 정보 조회"
+    authentication: required
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          success: true
+          authenticated: true
+          username: string
+          role: USER | ADMIN
+
+      401:
+        description: "인증되지 않음"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/UserController.java:38"
+
+  change_password:
+    method: PUT
+    path: /users/change-password
+    controller: UserController
+    description: "비밀번호 변경"
+    authentication: required
+    role_required: ADMIN
+    request:
+      body:
+        current_password:
+          type: string
+          validation:
+            not_blank: true
+        new_password:
+          type: string
+          validation:
+            not_blank: true
+            # NOTE: validation 누락됨 (@Size, @Pattern 부재)
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          success: true
+          message: "비밀번호가 성공적으로 변경되었습니다."
+
+      400:
+        description: "검증 오류"
+
+      401:
+        description: "인증 오류"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/UserController.java:26"
+
+  check_username:
+    method: GET
+    path: /users/check-username/{username}
+    controller: UserController
+    description: "사용자명 중복 확인"
+    authentication: not_required
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          username: string
+          exists: boolean
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/UserController.java:70"
+
+  register_user:
+    method: POST
+    path: /users/register
+    controller: UserController
+    description: "사용자 등록"
+    authentication: required
+    role_required: ADMIN
+    request:
+      body:
+        username:
+          type: string
+          validation:
+            not_blank: true
+            min_length: 7
+            max_length: 20
+            pattern: "^[a-zA-Z0-9_-]+$"
+
+        password:
+          type: string
+          validation:
+            not_blank: true
+            min_length: 8
+            max_length: 30
+
+    responses:
+      201:
+        description: "성공"
+        body:
+          success: true
+          message: "사용자가 성공적으로 등록되었습니다."
+          username: string
+
+      400:
+        description: "검증 오류"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/UserController.java:59"
+
+  # ============================================
+  # Raid Videos
+  # ============================================
+  get_videos:
+    method: GET
+    path: /videos
+    controller: RaidVideoController
+    description: "모든 레이드 공략 영상 조회"
+    authentication: required
+    role_required: ADMIN
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          type: array
+          items: RaidVideo
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/RaidVideoController.java:23"
+
+  create_video:
+    method: POST
+    path: /videos
+    controller: RaidVideoController
+    description: "레이드 공략 영상 등록"
+    authentication: required
+    role_required: ADMIN
+    request:
+      body: RaidVideo
+        title:
+          type: string
+          validation:
+            not_blank: true
+            max_length: 100
+        youtube_url:
+          type: string
+          validation:
+            not_blank: true
+            max_length: 255
+        uploader_name:
+          type: string
+          validation:
+            not_blank: true
+            max_length: 50
+        raid_name:
+          type: string
+          validation:
+            not_blank: true
+            max_length: 20
+        difficulty:
+          type: string
+          validation:
+            max_length: 20
+        gate:
+          type: string
+          validation:
+            max_length: 20
+
+    responses:
+      200:
+        description: "성공"
+        body: RaidVideo
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/RaidVideoController.java:18"
+
+  delete_video:
+    method: DELETE
+    path: /videos/{id}
+    controller: RaidVideoController
+    description: "레이드 공략 영상 삭제"
+    authentication: required
+    role_required: ADMIN
+
+    responses:
+      204:
+        description: "삭제 성공 (No Content)"
+
+      404:
+        description: "비디오를 찾을 수 없음"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/RaidVideoController.java:28"
+
+  # ============================================
+  # Cheat Sheets
+  # ============================================
+  get_cheat_sheets:
+    method: GET
+    path: /cheatsheets
+    controller: CheatSheetController
+    description: "모든 컨닝페이퍼 조회"
+    authentication: not_required
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          type: array
+          items: CheatSheet
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/CheatSheetController.java:33"
+
+  upload_cheat_sheet:
+    method: POST
+    path: /cheatsheets
+    controller: CheatSheetController
+    description: "컨닝페이퍼 업로드"
+    authentication: required
+    role_required: ADMIN
+    content_type: multipart/form-data
+    request:
+      form_data:
+        title:
+          type: string
+          required: true
+        raid_name:
+          type: string
+          required: true
+        gate:
+          type: string
+          required: true
+        uploader_name:
+          type: string
+          required: true
+        file:
+          type: file
+          required: true
+          allowed_formats: [jpg, jpeg, png, gif, webp]
+
+    responses:
+      200:
+        description: "성공"
+        body: CheatSheet
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/CheatSheetController.java:20"
+
+  delete_cheat_sheet:
+    method: DELETE
+    path: /cheatsheets/{id}
+    controller: CheatSheetController
+    description: "컨닝페이퍼 삭제"
+    authentication: required
+    role_required: ADMIN
+
+    responses:
+      204:
+        description: "삭제 성공"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/CheatSheetController.java:38"
+
+  # ============================================
+  # Notice
+  # ============================================
+  get_notice:
+    method: GET
+    path: /notice
+    controller: NoticeController
+    description: "공지사항 조회"
+    authentication: not_required
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          content: string
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/NoticeController.java:15"
+
+  update_notice:
+    method: PUT
+    path: /notice
+    controller: NoticeController
+    description: "공지사항 수정"
+    authentication: required
+    role_required: ADMIN
+    request:
+      body:
+        content:
+          type: string
+          required: true
+
+    responses:
+      200:
+        description: "수정 성공"
+
+      400:
+        description: "검증 오류"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/NoticeController.java:20"
+
+  # ============================================
+  # Admin Posts
+  # ============================================
+  get_admin_posts:
+    method: GET
+    path: /admin-posts
+    controller: AdminPostController
+    description: "모든 관리자 게시글 조회"
+    authentication: not_required
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          type: array
+          items: AdminPost
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/AdminPostController.java:16"
+
+  get_admin_post_by_id:
+    method: GET
+    path: /admin-posts/{id}
+    controller: AdminPostController
+    description: "게시글 상세 조회"
+    authentication: not_required
+
+    responses:
+      200:
+        description: "성공"
+        body: AdminPost
+
+      404:
+        description: "게시글을 찾을 수 없음"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/AdminPostController.java:22"
+
+  create_admin_post:
+    method: POST
+    path: /admin-posts
+    controller: AdminPostController
+    description: "게시글 작성"
+    authentication: required
+    role_required: ADMIN
+    request:
+      body: AdminPost
+        title:
+          type: string
+          required: true
+        content:
+          type: string
+          required: true
+
+    responses:
+      200:
+        description: "성공"
+        body: AdminPost
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/AdminPostController.java:26"
+
+  update_admin_post:
+    method: PUT
+    path: /admin-posts/{id}
+    controller: AdminPostController
+    description: "게시글 수정"
+    authentication: required
+    role_required: ADMIN
+    request:
+      body: AdminPost
+        title:
+          type: string
+        content:
+          type: string
+
+    responses:
+      200:
+        description: "성공"
+        body: AdminPost
+
+      404:
+        description: "게시글을 찾을 수 없음"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/AdminPostController.java:31"
+
+  delete_admin_post:
+    method: DELETE
+    path: /admin-posts/{id}
+    controller: AdminPostController
+    description: "게시글 삭제"
+    authentication: required
+    role_required: ADMIN
+
+    responses:
+      200:
+        description: "삭제 성공"
+
+      404:
+        description: "게시글을 찾을 수 없음"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/AdminPostController.java:36"
+
+  # ============================================
+  # Statistics
+  # ============================================
+  log_activity:
+    method: POST
+    path: /stats/log
+    controller: AdminStatsController
+    description: "사용자 활동 로그 기록"
+    authentication: not_required
+
+    request:
+      body:
+        activity_type:
+          type: string
+          allowed_values: [VIDEO_CLICK, CHEATSHEET_CLICK, SEARCH, PAGE_VIEW]
+        target_title:
+          type: string
+          required: false
+        search_query:
+          type: string
+          required: false
+        device_type:
+          type: string
+          allowed_values: [MOBILE, PC]
+
+    responses:
+      200:
+        description: "성공"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/service/UserActivityService.java"
+
+  get_dashboard_stats:
+    method: GET
+    path: /stats/dashboard
+    controller: AdminStatsController
+    description: "대시보드 통계 조회"
+    authentication: required
+    role_required: ADMIN
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          top_videos: array
+          top_cheatsheets: array
+          top_searches: array
+          total_visits: number
+          device_distribution: object
+
+      401:
+        description: "권한 부족"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/AdminStatsController.java"
+
+  # ============================================
+  # YouTube Playlist
+  # ============================================
+  get_playlist_items:
+    method: GET
+    path: /youtube/playlist-items
+    controller: YouTubePlaylistController
+    description: "YouTube 플레이리스트 아이템 조회"
+    authentication: not_required
+
+    query_params:
+      playlist_id:
+        type: string
+        required: true
+      fetch_all:
+        type: boolean
+        default: true
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          items:
+            type: array
+            items: PlaylistItem
+
+      400:
+        description: "잘못된 요청"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/service/YouTubePlaylistService.java"
+
+  # ============================================
+  # Blocked Videos
+  # ============================================
+  block_video:
+    method: POST
+    path: /blocked-videos
+    controller: BlockedVideoController
+    description: "비디오 차단"
+    authentication: required
+    role_required: ADMIN
+    request:
+      body:
+        video_id:
+          type: string
+          required: true
+        reason:
+          type: string
+          required: false
+
+    responses:
+      200:
+        description: "성공"
+
+      401:
+        description: "권한 부족"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/BlockedVideoController.java"
+
+  unblock_video:
+    method: DELETE
+    path: /blocked-videos/{video_id}
+    controller: BlockedVideoController
+    description: "비디오 차단 해제"
+    authentication: required
+    role_required: ADMIN
+
+    responses:
+      204:
+        description: "성공"
+
+      404:
+        description: "차단 정보를 찾을 수 없음"
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/controller/BlockedVideoController.java"
+
+  get_blocked_videos:
+    method: GET
+    path: /blocked-videos
+    controller: BlockedVideoController
+    description: "차단된 비디오 목록 조회"
+    authentication: required
+    role_required: ADMIN
+
+    responses:
+      200:
+        description: "성공"
+        body:
+          type: array
+          items: string # video_id list
+
+    _reverse_meta:
+      source: "raid_hub_frontend/lib/services/api_service.dart:196"
+
+rate_limiting:
+  general_api:
+    limit: 100
+    period: 1 minute
+    per: ip_address
+
+  logging_api:
+    limit: 30
+    period: 1 minute
+    per: ip_address
+    path_prefix: /api/stats/log
+
+error_responses:
+  standard_format:
+    success: boolean
+    message: string
+
+  validation_error:
+    status_code: 400
+
+  unauthorized_error:
+    status_code: 401
+    message: "인증이 필요합니다."
+
+  forbidden_error:
+    status_code: 403
+    message: "접근 권한이 없습니다."
+
+  too_many_requests:
+    status_code: 429
+    message: "요청이 너무 많습니다."

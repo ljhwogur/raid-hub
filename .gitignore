@@ -6,3 +6,6 @@ uploads
 .env
 .env.*
 !.env.example
+
+# Debug logs
+firebase-debug.log

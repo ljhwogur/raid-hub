@@ -1,0 +1,102 @@
+version: "2.0"
+screen:
+  name: 관리자 대시보드
+  route: /admin
+  description: "서비스 인사이트 대시보드 화면 (ADMIN 권한만 접근)"
+
+access_control:
+  required_role: ADMIN
+  failure_action:
+    show_snackbar: "관리자 권한이 없습니다. 접근이 차단되었습니다."
+    navigate_back: true
+
+data_requirements:
+  - resource: stats
+    needs: [top_videos, top_cheatsheets, top_searches, total_visits, device_distribution]
+    source: "ApiService.getDashboardStats()"
+
+components:
+  - id: app_bar
+    type: AppBar
+    title: "📊 서비스 인사이트 대시보드"
+    actions:
+      - id: refresh_button
+        icon: Icons.refresh_rounded
+        action: _loadStats
+
+  - id: summary_section
+    type: Container
+    styling:
+      gradient: LinearGradient
+      colors:
+        dark: [Color(0xFF1A1C20), Color(0xFF0F1012)]
+        light: [Color(0xFFF8F9FA), Color(0xFFE9ECEF)]
+
+  - id: stats_grid
+    type: Column
+    layout:
+      - row_1:
+        - left: top_videos
+          title: "🎬 인기 공략 영상"
+        - right: top_cheatsheets
+          title: "📄 인기 컨닝페이퍼"
+
+      - row_2:
+        - full: top_searches
+          title: "🔍 실시간 인기 검색어"
+
+  - id: list_section
+    type: ConstrainedBox
+    max_width: 1200
+    children:
+      - id: stats_list
+        type: ListView
+        items:
+          - video_item
+            type: ListTile
+            shows_rank: true
+            shows_title: true
+            shows_count: true
+
+          - cheatsheet_item
+            type: ListTile
+            shows_rank: true
+            shows_title: true
+            shows_count: true
+
+          - search_item
+            type: ListTile
+            shows_rank: true
+            shows_query: true
+            shows_count: true
+            icon: search
+
+  - id: loading_indicator
+    component: CircularProgressIndicator
+    shows_when: _isLoading
+
+state_management:
+  type: StatefulWidget
+  state_variables:
+    - _stats: Map<String, dynamic>?
+      description: "대시보드 통계 데이터"
+    - _isLoading: bool
+      description: "로딩 상태"
+
+user_flows:
+  - auth_check:
+    - initState에서 AuthService.isAdmin 확인
+    - 권한 없을 때 화면 종료
+
+  - data_load:
+    - _loadStats() 호출
+    - ApiService.getDashboardStats() 호출
+    - _stats에 저장
+
+  - error_handling:
+    - 로딩 실패 시 SnackBar 표시
+
+_reverse_meta:
+  source: "raid_hub_frontend/lib/screens/admin_dashboard_screen.dart"
+  extracted_at: "2026-03-23"
+  confidence: 0.85

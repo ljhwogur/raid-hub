@@ -1,0 +1,76 @@
+version: "2.0"
+screen:
+  name: 로그인 화면
+  route: /login
+  description: "관리자 로그인 화면"
+
+data_requirements:
+  - resource: auth
+    needs: []
+    source: "AuthService.login()"
+
+components:
+  - id: login_form
+    type: Form
+    fields:
+      - id: username_input
+        type: TextFormField
+        label: "아이디"
+        decoration:
+          border: OutlineInputBorder()
+        validation:
+          required: true
+
+      - id: password_input
+        type: TextFormField
+        label: "비밀번호"
+        decoration:
+          border: OutlineInputBorder()
+        obscure_text: true
+        validation:
+          required: true
+
+    actions:
+      - id: submit_button
+        type: ElevatedButton
+        label: "로그인"
+        action: _login()
+        enabled_when: form is valid
+
+  - id: app_bar
+    type: AppBar
+    title: "관리자 로그인"
+
+state_management:
+  type: StatefulWidget
+  state_variables:
+    - _formKey: GlobalKey<FormState>
+    - _usernameController: TextEditingController
+    - _passwordController: TextEditingController
+
+user_flows:
+  - login_process:
+    1. 아이디/비밀번호 입력
+    2. 로그인 버튼 클릭
+    3. form validation 체크
+    4. AuthService.login() 호출
+    5. 성공 시:
+       - SnackBar 표시 ("로그인 성공!")
+       - 이전 화면으로 pop
+    6. 실패 시:
+       - SnackBar 표시 (authService.loginErrorMessage)
+       - 화면 유지
+
+error_handling:
+  - validation_error:
+    - 아이디가 비어있음: return "아이디를 입력하세요"
+    - 비밀번호가 비어있음: return "비밀번호를 입력하세요"
+
+  - login_error:
+    - 기본 메시지: "아이디 또는 비밀번호를 확인하세요"
+    - authService.loginErrorMessage가 존재하면 해당 메시지 사용
+
+_reverse_meta:
+  source: "raid_hub_frontend/lib/screens/login_screen.dart"
+  extracted_at: "2026-03-23"
+  confidence: 0.95

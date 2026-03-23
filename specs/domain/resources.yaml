@@ -1,0 +1,305 @@
+version: "2.0"
+description: "RaidHub 도메인 리소스 (역추출됨)"
+extracted_at: "2026-03-23"
+confidence: 0.90
+
+resources:
+  users:
+    description: "사용자"
+    table: users
+    fields:
+      - name: id
+        type: long
+        primary: true
+        auto_increment: true
+        nullable: false
+
+      - name: username
+        type: string
+        length: 20
+        unique: true
+        nullable: false
+        pattern: "^[a-zA-Z0-9_-]+$"
+
+      - name: password
+        type: string
+        length: 60
+        nullable: false
+
+      - name: role
+        type: string
+        length: 20
+        nullable: false
+        default: "USER"
+        allowed_values: [USER, ADMIN]
+
+      - name: enabled
+        type: boolean
+        nullable: false
+        default: false
+
+    indexes:
+      - name: uk_users_username
+        columns: [username]
+        unique: true
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/entity/User.java"
+      extracted_at: "2026-03-23"
+
+  raid_videos:
+    description: "레이드 공략 영상"
+    table: raid_videos
+    fields:
+      - name: id
+        type: long
+        primary: true
+        auto_increment: true
+        nullable: false
+
+      - name: title
+        type: string
+        length: 100
+        nullable: false
+        validation:
+          not_blank: true
+          max_length: 100
+
+      - name: youtube_url
+        type: string
+        length: 255
+        nullable: false
+        validation:
+          not_blank: true
+          max_length: 255
+
+      - name: uploader_name
+        type: string
+        length: 50
+        nullable: false
+        validation:
+          not_blank: true
+          max_length: 50
+
+      - name: raid_name
+        type: string
+        length: 20
+        nullable: false
+        validation:
+          not_blank: true
+          max_length: 20
+
+      - name: difficulty
+        type: string
+        length: 20
+        nullable: false
+        validation:
+          max_length: 20
+
+      - name: gate
+        type: string
+        length: 20
+        nullable: false
+        validation:
+          max_length: 20
+
+      - name: created_at
+        type: timestamp
+        nullable: false
+        updatable: false
+        auto: true
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/entity/RaidVideo.java"
+      extracted_at: "2026-03-23"
+
+  cheat_sheets:
+    description: "컨닝페이퍼"
+    table: cheat_sheets
+    fields:
+      - name: id
+        type: long
+        primary: true
+        auto_increment: true
+        nullable: false
+
+      - name: title
+        type: string
+        nullable: false
+        validation:
+          not_blank: true
+
+      - name: raid_name
+        type: string
+        nullable: false
+        validation:
+          not_blank: true
+
+      - name: gate
+        type: string
+        nullable: false
+        validation:
+          not_blank: true
+
+      - name: uploader_name
+        type: string
+        nullable: true
+
+      - name: image_url
+        type: string
+        nullable: false
+        validation:
+          not_blank: true
+
+      - name: created_at
+        type: timestamp
+        nullable: false
+        updatable: false
+        auto: true
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/entity/CheatSheet.java"
+      extracted_at: "2026-03-23"
+
+  notices:
+    description: "공지사항"
+    table: notices
+    fields:
+      - name: id
+        type: long
+        primary: true
+        auto_increment: true
+        nullable: false
+
+      - name: content
+        type: text
+        nullable: false
+        column_definition: "TEXT"
+
+      - name: updated_at
+        type: timestamp
+        nullable: true
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/entity/Notice.java"
+      extracted_at: "2026-03-23"
+
+  admin_posts:
+    description: "관리자 게시글"
+    table: admin_posts
+    fields:
+      - name: id
+        type: long
+        primary: true
+        auto_increment: true
+        nullable: false
+
+      - name: title
+        type: string
+        nullable: false
+
+      - name: content
+        type: text
+        nullable: false
+        column_definition: "TEXT"
+
+      - name: created_at
+        type: timestamp
+        nullable: true
+
+      - name: updated_at
+        type: timestamp
+        nullable: true
+        auto: true
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/entity/AdminPost.java"
+      extracted_at: "2026-03-23"
+
+  blocked_videos:
+    description: "차단된 비디오"
+    table: blocked_videos
+    fields:
+      - name: id
+        type: long
+        primary: true
+        auto_increment: true
+        nullable: false
+
+      - name: video_id
+        type: string
+        nullable: false
+        unique: true
+        validation:
+          not_blank: true
+
+      - name: reason
+        type: string
+        nullable: true
+
+    indexes:
+      - name: uk_blocked_videos_video_id
+        columns: [video_id]
+        unique: true
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/entity/BlockedVideo.java"
+      extracted_at: "2026-03-23"
+
+  user_activities:
+    description: "사용자 활동 로그"
+    table: user_activities
+    fields:
+      - name: id
+        type: long
+        primary: true
+        auto_increment: true
+        nullable: false
+
+      - name: activity_type
+        type: string
+        nullable: false
+        allowed_values: [VIDEO_CLICK, CHEATSHEET_CLICK, SEARCH, PAGE_VIEW]
+
+      - name: target_title
+        type: string
+        nullable: true
+
+      - name: device_type
+        type: string
+        nullable: true
+        allowed_values: [MOBILE, PC]
+
+      - name: search_query
+        type: string
+        nullable: true
+
+      - name: created_at
+        type: timestamp
+        nullable: false
+        auto: true
+
+    _reverse_meta:
+      source: "raid_hub_backend/src/main/java/com/example/raid_hub/entity/UserActivity.java"
+      extracted_at: "2026-03-23"
+
+relationships:
+  - from: users
+    to: admin_posts
+    type: one_to_many
+    description: "관리자는 여러 게시글 작성"
+
+  - from: users
+    to: raid_videos
+    type: one_to_many
+    description: "사용자는 여러 비디오 업로드"
+
+  - from: users
+    to: cheat_sheets
+    type: one_to_many
+    description: "사용자는 여러 컨닝페이퍼 업로드"
+
+  - from: blocked_videos
+    to: raid_videos
+    type: one_to_one
+    description: "차단된 비디오 정보"
